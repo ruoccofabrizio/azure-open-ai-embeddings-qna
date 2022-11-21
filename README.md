@@ -43,5 +43,5 @@ Simple web application for creating Azure OpenAI embeddings vectors, retrieve th
 ```
 - Run the image
 ```
-    docker run -e .env your_docker_registry/your_docker_image:your_tag
+    docker run -e .env -p 80:80 your_docker_registry/your_docker_image:your_tag
 ```
