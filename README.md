@@ -11,6 +11,11 @@ Simple web application for creating Azure OpenAI embeddings vectors, retrieve th
 |embeddings_engines | text-search-davinci-doc-001  | Embeddings engines deployed in your Azure OpenAI Resource |
 |api_base | https://YOUR_AZURE_OPENAI_RESOURCE.openai.azure.com/ | Your Azure OpenAI Resource name. Get it in the [Azure Portal](https://portal.azure.com) |
 |api_key| 'YOUR_AZURE_OPENAI_API_KEY' | Your Azure OpenAI Api Key. Get it in the [Azure Portal](https://portal.azure.com)|
+|Blob_Account_Name| 'YOUR_AZURE_BLOB_STORAGE_ACCOUNT_NAME'| Get it in the [Azure Portal](https://portal.azure.com)|
+|Blob_Account_Key| 'YOUR_AZURE_BLOB_STORAGE_ACCOUNT_KEY'| Get it in the [Azure Portal](https://portal.azure.com)|
+|Blob_Container_Name| 'YOUR_AZURE_BLOB_STORAGE_CONTAINER_NAME'| Get it in the [Azure Portal](https://portal.azure.com)|
+|Form_Recognizer_Endpoint| 'YOUR_AZURE_FORM_RECOGNIZER_ENDPOINT'| Get it in the [Azure Portal](https://portal.azure.com)|
+|Form_Recognizer_Key| 'YOUR_AZURE_FORM_RECOGNIZER_KEY'| Get it in the [Azure Portal](https://portal.azure.com)|
 
 ## How to execute the WebApp locally
 - Create a python env
