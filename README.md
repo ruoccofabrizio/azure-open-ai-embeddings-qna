@@ -12,12 +12,12 @@ Simple web application for creating Azure OpenAI embeddings vectors, retrieve th
 |redis_password| redis-stack-password | OPTIONAL - Password for your Redis Stack | False |
 |REDIS_ARGS | --requirepass redis-stack-password | OPTIONAL - Password for your Redis Stack | False |
 |OpenAI_api_base | https://YOUR_AZURE_OPENAI_RESOURCE.openai.azure.com/ | Your Azure OpenAI Resource name. Get it in the [Azure Portal](https://portal.azure.com) |
-|OpenAI_api_key| 'YOUR_AZURE_OPENAI_API_KEY' | Your Azure OpenAI Api Key. Get it in the [Azure Portal](https://portal.azure.com)|  True |
+|OpenAI_api_key| 'YOUR_AZURE_OPENAI_KEY' | Your Azure OpenAI Api Key. Get it in the [Azure Portal](https://portal.azure.com)|  True |
 |Blob_Account_Name| 'YOUR_AZURE_BLOB_STORAGE_ACCOUNT_NAME'| OPTIONAL - Get it in the [Azure Portal](https://portal.azure.com) if you want to use document extraction feature| False |
-|Blob_Account_Key| 'YOUR_AZURE_BLOB_STORAGE_ACCOUNT_KEY'| Get it in the [Azure Portal](https://portal.azure.com)if you want to use document extraction feature| False |
-|Blob_Container_Name| 'YOUR_AZURE_BLOB_STORAGE_CONTAINER_NAME'| Get it in the [Azure Portal](https://portal.azure.com) if you want to use document extraction feature| False |
-|Form_Recognizer_Endpoint| 'YOUR_AZURE_FORM_RECOGNIZER_ENDPOINT'| Get it in the [Azure Portal](https://portal.azure.com) if you want to use document extraction feature| False |
-|Form_Recognizer_Key| 'YOUR_AZURE_FORM_RECOGNIZER_KEY'| Get it in the [Azure Portal](https://portal.azure.com) if you want to use document extraction feature| False |
+|Blob_Account_Key| 'YOUR_AZURE_BLOB_STORAGE_ACCOUNT_KEY'| OPTIONAL -Get it in the [Azure Portal](https://portal.azure.com)if you want to use document extraction feature| False |
+|Blob_Container_Name| 'YOUR_AZURE_BLOB_STORAGE_CONTAINER_NAME'| OPTIONAL -Get it in the [Azure Portal](https://portal.azure.com) if you want to use document extraction feature| False |
+|Form_Recognizer_Endpoint| 'YOUR_AZURE_FORM_RECOGNIZER_ENDPOINT'| OPTIONAL -Get it in the [Azure Portal](https://portal.azure.com) if you want to use document extraction feature| False |
+|Form_Recognizer_Key| 'YOUR_AZURE_FORM_RECOGNIZER_KEY'| OPTIONAL -Get it in the [Azure Portal](https://portal.azure.com) if you want to use document extraction feature| False |
 
 ## How to execute the WebApp and a Redis Stack with docker
 - Clone the repo
