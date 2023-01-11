@@ -45,19 +45,11 @@ try:
         st.session_state['embeddings_model'] = st.selectbox('Embeddings models', (os.environ['embeddings_engines'].split(',')))
         st.button("Compute Embeddings", on_click=embeddings)
 
-    data
+    if len(data) == 0:
+        st.warning("No embeddings found. Copy paste your data in the text input and click on 'Compute Embeddings'.")
+    else:
+        data
 
-    col1, col2, col3, col4 = st.columns([1,1,2,1])
-    with col1:
-        st.text("")
-        st.text("")
-        st.download_button("Download data", data.to_csv(index=False).encode('utf-8'), "embeddings.csv", "text/csv", key='download-embeddings')
-    with col3:
-        st.selectbox("Embedding id to delete", data.get('id',[]), key="data_to_drop")
-    with col4:
-        st.text("")
-        st.text("")
-        st.button("Delete row", on_click=delete_row)
 
 except URLError as e:
     st.error(
