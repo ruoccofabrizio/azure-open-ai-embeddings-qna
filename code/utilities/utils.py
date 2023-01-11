@@ -10,9 +10,9 @@ from utilities.redisembeddings import execute_query, get_documents
 def initialize(engine='davinci'):
    
     openai.api_type = "azure"
-    openai.api_base = os.getenv('api_base')
+    openai.api_base = os.getenv('OpenAI_api_base')
     openai.api_version = "2022-12-01"
-    openai.api_key = os.getenv("api_key")
+    openai.api_key = os.getenv("OpenAI_api_key")
 
     # Read or compute embeddings with model
     return get_documents()
@@ -48,7 +48,9 @@ def get_semantic_answer(df, question, max_tokens=400, explicit_prompt="", model=
 
     if explicit_prompt == "":
         res = search_semantic_redis(df, question, n=3, pprint=False, engine=engine)
-        if limit_response:
+        if res.get('text') == None:
+            prompt = f"{question}"
+        elif limit_response:
             prompt = f"{res['text'][0]}{restart_sequence}Please reply to the question using only the information present in this text or reply 'Not in the text': {question}"
         else:
             prompt = f"{res['text'][0]}{restart_sequence}{question}"

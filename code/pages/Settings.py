@@ -5,7 +5,7 @@ from utilities import utils
 import os
 
 try:
-        # Set page layout to wide screen and menu item
+    # Set page layout to wide screen and menu item
     menu_items = {
 	'Get help': None,
 	'Report a bug': None,
@@ -16,14 +16,12 @@ try:
     }
     st.set_page_config(layout="wide", menu_items=menu_items)
 
-    api_base = os.getenv('api_base', '')
-    os.environ['api_base'] = st.text_input("OpenAI Resource", value=api_base)
-    api_key = os.getenv("api_key", '')
-    os.environ['api_key'] = st.text_input("OpenAI Key", value=api_key, type='password')
-    engines = os.getenv('engines','')
-    os.environ['engines'] = st.text_input("OpenAI Engine deployed", value=engines, disabled=True)
-    embeddings_path = os.getenv('embeddings_path', '')
-    os.environ['embeddings_path'] = st.text_input("Local embeddings path", value=embeddings_path)
+    api_base = os.getenv('OpenAI_api_base', '')
+    os.environ['OpenAI_api_base'] = st.text_input("OpenAI Resource", value=api_base)
+    api_key = os.getenv("OpenAI_api_key", '')
+    os.environ['OpenAI_api_key'] = st.text_input("OpenAI Key", value=api_key, type='password')
+    engines = os.getenv('OpenAI_engines','')
+    os.environ['OpenAI_engines'] = st.text_input("OpenAI Engine deployed", value=engines, disabled=True)
     st.session_state['limit_response'] = st.checkbox("Limit response to the provided text", value=st.session_state['limit_response'])
 
 

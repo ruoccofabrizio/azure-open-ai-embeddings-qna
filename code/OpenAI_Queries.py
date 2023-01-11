@@ -38,11 +38,15 @@ try:
     }
     st.set_page_config(layout="wide", menu_items=menu_items)
 
+    col1, col2, col3 = st.columns([1,2,1])
+    with col1:
+        st.image(os.path.join('images','microsoft.png'))
+
     col1, col2, col3 = st.columns([2,2,1])
     with col3:
         model = st.selectbox(
             "OpenAI GPT-3 Model",
-            (os.environ['engines'].split(','))
+            (os.environ['OpenAI_engines'].split(','))
         )
 
     # col1, col2, col3, col4 = st.columns([9,1,5,1])

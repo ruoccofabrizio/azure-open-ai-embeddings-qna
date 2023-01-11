@@ -6,13 +6,13 @@ Simple web application for creating Azure OpenAI embeddings vectors, retrieve th
 
 | App Setting | Value | Note |
 | --- | --- | ------------- |
-|engines| davinci-002,text-curie-001,text-babbage-001,text-ada-001 | Engines deployed in your Azure OpenAI Resource |
-|embeddings_engines | text-search-davinci-doc-001  | Embeddings engines deployed in your Azure OpenAI Resource |
+|OpenAI_engines| davinci-002,text-curie-001,text-babbage-001,text-ada-001 | Engines deployed in your Azure OpenAI Resource |
+|OpenAI_embeddings_engines | text-search-davinci-doc-001  | Embeddings engines deployed in your Azure OpenAI Resource |
 |redis_address| api | URL for Redis Stack: "api" for docker composer |
 |redis_password| redis-stack-password | OPTIONAL - Password for your Redis Stack |
 |REDIS_ARGS | --requirepass redis-stack-password | OPTIONAL - Password for your Redis Stack |
-|api_base | https://YOUR_AZURE_OPENAI_RESOURCE.openai.azure.com/ | Your Azure OpenAI Resource name. Get it in the [Azure Portal](https://portal.azure.com) |
-|api_key| 'YOUR_AZURE_OPENAI_API_KEY' | Your Azure OpenAI Api Key. Get it in the [Azure Portal](https://portal.azure.com)|
+|OpenAI_api_base | https://YOUR_AZURE_OPENAI_RESOURCE.openai.azure.com/ | Your Azure OpenAI Resource name. Get it in the [Azure Portal](https://portal.azure.com) |
+|OpenAI_api_key| 'YOUR_AZURE_OPENAI_API_KEY' | Your Azure OpenAI Api Key. Get it in the [Azure Portal](https://portal.azure.com)|
 |Blob_Account_Name| 'YOUR_AZURE_BLOB_STORAGE_ACCOUNT_NAME'| Get it in the [Azure Portal](https://portal.azure.com)|
 |Blob_Account_Key| 'YOUR_AZURE_BLOB_STORAGE_ACCOUNT_KEY'| Get it in the [Azure Portal](https://portal.azure.com)|
 |Blob_Container_Name| 'YOUR_AZURE_BLOB_STORAGE_CONTAINER_NAME'| Get it in the [Azure Portal](https://portal.azure.com)|
