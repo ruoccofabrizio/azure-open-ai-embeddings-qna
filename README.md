@@ -50,7 +50,7 @@ It will spin 2 docker containers:
 ```
 - Run Streamlit
 ```
-    streamlit run OpenAI-Queries.py
+    streamlit run OpenAI_Queries.py
 ```
 
 ## Hot to execute the WebApp with Docker (with an available Redis Stack)

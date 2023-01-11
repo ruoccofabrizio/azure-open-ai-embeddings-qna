@@ -53,7 +53,7 @@ try:
         st.text("")
         st.download_button("Download data", data.to_csv(index=False).encode('utf-8'), "embeddings.csv", "text/csv", key='download-embeddings')
     with col3:
-        st.selectbox("Embedding id to delete", data['id'], key="data_to_drop")
+        st.selectbox("Embedding id to delete", data.get('id',[]), key="data_to_drop")
     with col4:
         st.text("")
         st.text("")

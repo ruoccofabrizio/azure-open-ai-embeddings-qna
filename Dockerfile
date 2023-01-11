@@ -5,4 +5,4 @@ RUN apt-get update
 RUN apt-get install python-tk python3-tk tk-dev -y
 RUN pip install -r requirements.txt
 EXPOSE 80
-CMD ["streamlit", "run", "OpenAI-Queries.py", "--server.port", "80"]
+CMD ["streamlit", "run", "OpenAI_Queries.py", "--server.port", "80"]
