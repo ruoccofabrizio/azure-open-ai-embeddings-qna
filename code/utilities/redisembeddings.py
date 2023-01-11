@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from pprint import pprint
 import uuid
+import os
 
 # Redis configuration
 DIM = 12288
@@ -67,7 +68,7 @@ def delete_document(index):
     redis_conn.delete(f"{index}")
 
 # Connect to the Redis server
-redis_conn = Redis(host='api', port=6379) #api for Docker localhost for local execution
+redis_conn = Redis(host= os.environ.get('redis_address','localhost'), port=6379, password=os.environ.get('redis_password',None)) #api for Docker localhost for local execution
 
 # Check if Redis index exists
 index_name = "embeddings-index"
