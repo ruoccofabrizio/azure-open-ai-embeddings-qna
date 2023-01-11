@@ -1,16 +1,26 @@
 import streamlit as st
 from urllib.error import URLError
 import pandas as pd
-from utilities import utils
+from utilities import utils, redisembeddings
 import os
 
 def embeddings():
     embeddings = utils.chunk_and_embed(st.session_state['doc_text'])
-    data = pd.read_csv(os.environ['embeddings_path'])
-    data = data.to_dict('records')
-    data.append(embeddings)
-    data = pd.DataFrame(data)
-    data.to_csv(os.environ['embeddings_path'], index=False)
+    # Store embeddings in Redis
+    print(embeddings.keys())
+    redisembeddings.set_document(embeddings)
+
+
+    token_len = utils.get_token_count(st.session_state['doc_text'])
+    if token_len >= 2046:
+        st.warning(f'Your input text has {token_len} tokens. Please try reducing it (<= 2046) to get a full embeddings representation')
+
+def delete_row():
+    st.session_state['data_to_drop'] 
+    redisembeddings.delete_document(st.session_state['data_to_drop'])
+
+def token_count():
+    st.session_state['token_count'] = utils.get_token_count(st.session_state['doc_text'])
 
 try:
     # Set page layout to wide screen and menu item
@@ -24,7 +34,8 @@ try:
     }
     st.set_page_config(layout="wide", menu_items=menu_items)
 
-    data = pd.read_csv(os.environ['embeddings_path'])
+    # Query RediSearch to get all the embeddings
+    data = redisembeddings.get_documents()
 
     st.session_state['doc_text'] = st.text_area("Add a new document", height=600)
 
@@ -36,10 +47,17 @@ try:
 
     data
 
-    col1, col2, col3 = st.columns([1,1,2])
+    col1, col2, col3, col4 = st.columns([1,1,2,1])
+    with col1:
+        st.text("")
+        st.text("")
+        st.download_button("Download data", data.to_csv(index=False).encode('utf-8'), "embeddings.csv", "text/csv", key='download-embeddings')
     with col3:
-        st.download_button("Download embeddings", data.to_csv(index=False).encode('utf-8'), "embeddings.csv", "text/csv", key='download-embeddings')
-
+        st.selectbox("Embedding id to delete", data['id'], key="data_to_drop")
+    with col4:
+        st.text("")
+        st.text("")
+        st.button("Delete row", on_click=delete_row)
 
 except URLError as e:
     st.error(

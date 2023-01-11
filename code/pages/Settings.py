@@ -21,9 +21,10 @@ try:
     api_key = os.getenv("api_key", '')
     os.environ['api_key'] = st.text_input("OpenAI Key", value=api_key, type='password')
     engines = os.getenv('engines','')
-    os.environ['engines'] = st.text_input("OpenAI Engine deployed", value=engines)
+    os.environ['engines'] = st.text_input("OpenAI Engine deployed", value=engines, disabled=True)
     embeddings_path = os.getenv('embeddings_path', '')
     os.environ['embeddings_path'] = st.text_input("Local embeddings path", value=embeddings_path)
+    st.session_state['limit_response'] = st.checkbox("Limit response to the provided text", value=st.session_state['limit_response'])
 
 
 except URLError as e:

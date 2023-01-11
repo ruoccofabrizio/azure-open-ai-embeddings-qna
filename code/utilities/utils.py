@@ -5,22 +5,19 @@ import openai
 import os
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from transformers import GPT2Tokenizer
+from utilities.redisembeddings import execute_query, get_documents
 
-def initialize(embeddings_path=r'embeddings_text.csv', engine='babbage'):
+def initialize(engine='davinci'):
    
     openai.api_type = "azure"
     openai.api_base = os.getenv('api_base')
-    openai.api_version = "2022-06-01-preview"
+    openai.api_version = "2022-12-01"
     openai.api_key = os.getenv("api_key")
 
     # Read or compute embeddings with model
-    df = pd.read_csv(embeddings_path)
-    if f'{engine}_search' in df:
-        # Reading embedding
-        df[f'{engine}_search'] = df[f'{engine}_search'].apply(eval).apply(np.array)
-    return df
+    return get_documents()
 
-# Semantically search using the computed embeddings
+# Semantically search using the computed embeddings locally
 def search_semantic(df, search_query, n=3, pprint=True, engine='babbage'):
     embedding = get_embedding(search_query, engine=f'text-search-{engine}-query-001')
     df['similarities'] = df[f'{engine}_search'].apply(lambda x: cosine_similarity(x, embedding))
@@ -32,16 +29,30 @@ def search_semantic(df, search_query, n=3, pprint=True, engine='babbage'):
             print()
     return res.reset_index()
 
-# Return a semantically aware response using the Completion endpoint
-def get_semantic_answer(df, question, max_tokens=400, explicit_prompt="", model="text-davinci-002", engine='babbage'):
+# Semantically search using the computed embeddings on RediSearch
+def search_semantic_redis(df, search_query, n=3, pprint=True, engine='babbage'):
+    embedding = get_embedding(search_query, engine=f'text-search-{engine}-query-001')
+    res = execute_query(np.array(embedding))
 
-    start_sequence = "\nA:"
-    restart_sequence = "\n\nQ: "
+    if pprint:
+        for r in res:
+            print(r[:200])
+            print()
+    return res.reset_index()
+
+# Return a semantically aware response using the Completion endpoint
+def get_semantic_answer(df, question, max_tokens=400, explicit_prompt="", model="DaVinci-text", engine='babbage', limit_response=True):
+
+    restart_sequence = "\n\n"
+    question += "\n"
 
     if explicit_prompt == "":
-        res = search_semantic(df, question, n=3, pprint=False, engine=engine)
-        prompt = f"{res['text'][0][:-1]}{restart_sequence}{question}"
-
+        res = search_semantic_redis(df, question, n=3, pprint=False, engine=engine)
+        if limit_response:
+            prompt = f"{res['text'][0]}{restart_sequence}Please reply to the question using only the information present in this text or reply 'Not in the text': {question}"
+        else:
+            prompt = f"{res['text'][0]}{restart_sequence}{question}"
+            
     else:
         prompt = f"{explicit_prompt}{restart_sequence}{question}"
 
@@ -53,7 +64,7 @@ def get_semantic_answer(df, question, max_tokens=400, explicit_prompt="", model=
         top_p=1,
         frequency_penalty=0,
         presence_penalty=0,
-        stop=["\\n"]
+        stop=None
     )
 
     print(f"{response['choices'][0]['text'].encode().decode()}\n\n\n")
@@ -86,3 +97,25 @@ def chunk_and_embed(text: str, engine="text-search-davinci-doc-001"):
     full_data['davinci_search'] = get_embedding(text)
 
     return full_data
+
+
+def get_summary(prompt="", max_tokens=400, model="text-davinci-002"):
+    response = openai.Completion.create(
+        engine=model,
+        prompt=prompt,
+        temperature=1,
+        max_tokens=max_tokens,
+        top_p=0.5,
+        frequency_penalty=0,
+        presence_penalty=0,
+        stop=None
+    )
+
+    print(f"{response['choices'][0]['text'].encode().decode()}\n\n\n")
+
+    return prompt,response#, res['page'][0]
+
+
+def get_token_count(text: str):
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    return len(tokenizer(text)['input_ids'])

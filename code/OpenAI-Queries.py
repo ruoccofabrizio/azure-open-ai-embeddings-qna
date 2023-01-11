@@ -3,14 +3,15 @@ from urllib.error import URLError
 import pandas as pd
 from utilities import utils
 import os
+import setenv
 
-df = utils.initialize(embeddings_path=os.environ['embeddings_path'], engine='davinci')
+df = utils.initialize(engine='davinci')
 
 try:
 
-    default_prompt = pd.read_csv(os.environ['embeddings_path'])['text'][0].encode('utf-8').decode('utf-8')
-    default_question = "posso effettuare bonifici esteri con la postepay evolution?"
-    default_answer = "Sì, è possibile effettuare bonifici esteri con la Postepay Evolution. Per ricevere i bonifici SEPA da paesi diversi dall’Italia sarà necessario comunicare anche il codice BIC di Postepay S.p.A. PPAYITR1XXX"
+    default_prompt = "" 
+    default_question = "" 
+    default_answer = ""
 
     if 'question' not in st.session_state:
         st.session_state['question'] = default_question
@@ -22,7 +23,9 @@ try:
                 "text" : default_answer
             }]
         }    
-    
+    if 'limit_response' not in st.session_state:
+        st.session_state['limit_response'] = True
+
     # Set page layout to wide screen and menu item
     menu_items = {
 	'Get help': None,
@@ -48,7 +51,7 @@ try:
     if question != '':
         if question != st.session_state['question']:
             st.session_state['question'] = question
-            st.session_state['prompt'], st.session_state['response'] = utils.get_semantic_answer(df, question, model=model, engine='davinci')
+            st.session_state['prompt'], st.session_state['response'] = utils.get_semantic_answer(df, question, model=model, engine='davinci', limit_response=st.session_state['limit_response'])
             st.write(f"Q: {question}")  
             st.write(st.session_state['response']['choices'][0]['text'])
             with st.expander("Question and Answer Context"):

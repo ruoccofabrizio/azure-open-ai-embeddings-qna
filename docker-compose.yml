@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+  web:
+    image: fruocco/oai-embeddings
+    ports:
+      - "80:80"
+    env_file:
+      - .env
+    depends_on:
+      api:
+        condition: service_healthy
+  api:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6379:6379"
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "localhost", "-p", "6379", "ping"]
+      interval: 2s
+      timeout: 1m30s
+      retries: 5
+      start_period: 5s
