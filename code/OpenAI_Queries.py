@@ -4,8 +4,6 @@ import pandas as pd
 from utilities import utils
 import os
 
-import setenv
-
 df = utils.initialize(engine='davinci')
 
 try:
@@ -46,7 +44,7 @@ try:
     with col3:
         model = st.selectbox(
             "OpenAI GPT-3 Model",
-            (os.environ['OpenAI_engines'].split(','))
+            (os.environ['OPENAI_ENGINES'].split(','))
         )
 
     # col1, col2, col3, col4 = st.columns([9,1,5,1])

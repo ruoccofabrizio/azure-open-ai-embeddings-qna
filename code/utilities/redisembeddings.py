@@ -68,7 +68,7 @@ def delete_document(index):
     redis_conn.delete(f"{index}")
 
 # Connect to the Redis server
-redis_conn = Redis(host= os.environ.get('redis_address','localhost'), port=6379, password=os.environ.get('redis_password',None)) #api for Docker localhost for local execution
+redis_conn = Redis(host= os.environ.get('REDIS_ADDRESS','localhost'), port=6379, password=os.environ.get('REDIS_PASSWORD',None)) #api for Docker localhost for local execution
 
 # Check if Redis index exists
 index_name = "embeddings-index"

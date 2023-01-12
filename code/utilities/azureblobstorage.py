@@ -3,10 +3,10 @@ from datetime import datetime, timedelta
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, generate_blob_sas, generate_container_sas, ContentSettings
 
 def upload_file(bytes_data, file_name, content_type='application/pdf'):
-    account_name = os.environ['Blob_Account_Name']
-    account_key = os.environ['Blob_Account_Key']
+    account_name = os.environ['BLOB_ACCOUNT_NAME']
+    account_key = os.environ['BLOB_ACCOUNT_KEY']
     connect_str = f"DefaultEndpointsProtocol=https;AccountName={account_name};AccountKey={account_key};EndpointSuffix=core.windows.net"
-    container_name = os.environ['Blob_Container_Name']
+    container_name = os.environ['BLOB_CONTAINER_NAME']
     # Create the BlobServiceClient object
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
     # Create a blob client using the local file name as the name for the blob
@@ -18,10 +18,10 @@ def upload_file(bytes_data, file_name, content_type='application/pdf'):
 
 def get_all_files():
     # Get all files in the container from Azure Blob Storage
-    account_name = os.environ['Blob_Account_Name']
-    account_key = os.environ['Blob_Account_Key']
+    account_name = os.environ['BLOB_ACCOUNT_NAME']
+    account_key = os.environ['BLOB_ACCOUNT_KEY']
     connect_str = f"DefaultEndpointsProtocol=https;AccountName={account_name};AccountKey={account_key};EndpointSuffix=core.windows.net"
-    container_name = os.environ['Blob_Container_Name']
+    container_name = os.environ['BLOB_CONTAINER_NAME']
     # Create the BlobServiceClient object
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
     # Get files in the container
