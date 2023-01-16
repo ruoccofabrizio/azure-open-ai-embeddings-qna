@@ -1,8 +1,6 @@
-FROM python:3.9.10-slim-buster
+FROM continuumio/anaconda3:latest
 COPY ./code/ /usr/local/src/myscripts
 WORKDIR /usr/local/src/myscripts
-RUN apt-get update
-RUN apt-get install python-tk python3-tk tk-dev -y
-RUN pip install -r requirements.txt
+RUN conda env create -f code/requirements.txt && conda activate openai-qna-env
 EXPOSE 80
 CMD ["streamlit", "run", "OpenAI_Queries.py", "--server.port", "80"]
