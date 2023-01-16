@@ -3,6 +3,9 @@ from urllib.error import URLError
 import pandas as pd
 from utilities import utils
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 df = utils.initialize(engine='davinci')
 
