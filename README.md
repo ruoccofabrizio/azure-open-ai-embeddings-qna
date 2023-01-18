@@ -2,6 +2,8 @@
 
 A simple web application for a OpenAI-enabled document search. This repo uses Azure OpenAI Service for creating embeddings vectors from documents. For answering the question of a user, it retrieves the most relevant document and then uses GPT-3 to extract the matching answer for the question.
 
+![Architecture](docs/architecture.png)
+
 # Running this repo
 You have multiple options to run the code:
 -   [Run everything locally in Docker (WebApp + Redis Stack)](#run-everything-locally-in-docker-webapp--redis-stack)
