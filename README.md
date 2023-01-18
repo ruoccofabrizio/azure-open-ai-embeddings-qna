@@ -44,7 +44,7 @@ This requires Redis running somewhere and expects that you've setup `.env` as de
 
 You can run a local Redis instance via:
 ```console
- docker run -p 6379:6379 redis/redis-stack-server:latest`.
+ docker run -p 6379:6379 redis/redis-stack-server:latest
 ```
 
 Create `conda` environment for Python:
