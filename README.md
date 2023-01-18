@@ -71,12 +71,12 @@ streamlit run OpenAI_Queries.py
 Make sure you have your `.env` setup, then run:
 
 ```console
-docker run -e .env -p 80:80 fruocco/oai-embeddings:latest
+docker run -e .env -p 8080:80 fruocco/oai-embeddings:latest
 ```
 
 ### Option 2 - Build the Docker image yourself
 
 ```console
 docker build . -t your_docker_registry/your_docker_image:your_tag
-docker run -e .env -p 80:80 your_docker_registry/your_docker_image:your_tag
+docker run -e .env -p 8080:80 your_docker_registry/your_docker_image:your_tag
 ```

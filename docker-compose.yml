@@ -3,7 +3,7 @@ services:
   web:
     image: fruocco/oai-embeddings
     ports:
-      - "80:80"
+      - "8080:80"
     env_file:
       - .env
     depends_on:
