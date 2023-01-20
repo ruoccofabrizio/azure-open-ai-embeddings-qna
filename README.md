@@ -20,8 +20,7 @@ git clone https://github.com/ruoccofabrizio/azure-open-ai-embeddings-qna
 cd azure-open-ai-embeddings-qna
 ```
 
-Next, configure your `.env` as described in [Environment variables](#environment-variables):
-
+Next, rename the .env.template to .env and fill it with your values as described in [Environment variables](#environment-variables):
 
 ```console
 cp .env.template .env
