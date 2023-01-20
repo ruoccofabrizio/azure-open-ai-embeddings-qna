@@ -18,8 +18,8 @@ def initialize(engine='davinci'):
     return get_documents()
 
 # Semantically search using the computed embeddings locally
-def search_semantic(df, search_query, n=3, pprint=True, engine='babbage'):
-    embedding = get_embedding(search_query, engine=f'text-search-{engine}-query-001')
+def search_semantic(df, search_query, n=3, pprint=True, engine='davinci'):
+    embedding = get_embedding(search_query, engine= os.getenv('OPENAI_EMBEDDINGS_ENGINE_QUERY', f'text-search-{engine}-query-001'))
     df['similarities'] = df[f'{engine}_search'].apply(lambda x: cosine_similarity(x, embedding))
 
     res = df.sort_values('similarities', ascending=False).head(n)
@@ -30,8 +30,8 @@ def search_semantic(df, search_query, n=3, pprint=True, engine='babbage'):
     return res.reset_index()
 
 # Semantically search using the computed embeddings on RediSearch
-def search_semantic_redis(df, search_query, n=3, pprint=True, engine='babbage'):
-    embedding = get_embedding(search_query, engine=f'text-search-{engine}-query-001')
+def search_semantic_redis(df, search_query, n=3, pprint=True, engine='davinci'):
+    embedding = get_embedding(search_query, engine= os.getenv('OPENAI_EMBEDDINGS_ENGINE_QUERY', f'text-search-{engine}-query-001'))
     res = execute_query(np.array(embedding))
 
     if pprint:
@@ -80,7 +80,7 @@ def get_embedding(text: str, engine="text-search-davinci-doc-001") -> list[float
     # replace newlines, which can negatively affect performance.
     text = text.replace("\n", " ")
 
-    return openai.Embedding.create(input=[text], engine=engine)["data"][0]["embedding"]
+    return openai.Embedding.create(input=[text], engine= os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-search-davinci-doc-001'))["data"][0]["embedding"]
 
 
 def chunk_and_embed(text: str, engine="text-search-davinci-doc-001"):

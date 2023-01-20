@@ -42,7 +42,7 @@ try:
     col1, col2, col3 = st.columns([1,1,1])
 
     with col3:
-        st.session_state['embeddings_model'] = st.selectbox('Embeddings models', (os.environ['OPENAI_EMBEDDINGS_ENGINES'].split(',')))
+        st.session_state['embeddings_model'] = st.selectbox('Embeddings models', (os.environ['OPENAI_EMBEDDINGS_ENGINE_DOC'].split(',')))
         st.button("Compute Embeddings", on_click=embeddings)
 
     if len(data) == 0:

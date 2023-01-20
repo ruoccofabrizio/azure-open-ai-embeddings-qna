@@ -124,7 +124,8 @@ Here is the explanation of the parameters:
 | App Setting | Value | Note |
 | --- | --- | ------------- |
 |OPENAI_ENGINES|davinci-002,text-curie-001,text-babbage-001,text-ada-001|Instruction engines deployed in your Azure OpenAI resource|
-|OPENAI_EMBEDDINGS_ENGINES | text-search-davinci-doc-001  | Embedding engines deployed in your Azure OpenAI resource|
+|OPENAI_EMBEDDINGS_ENGINE_DOC | text-search-davinci-doc-001  | Embedding engine for documents deployed in your Azure OpenAI resource|
+|OPENAI_EMBEDDINGS_ENGINE_QUERY | text-search-davinci-query-001  | Embedding engine for query deployed in your Azure OpenAI resource|
 |OPENAI_API_BASE | https://YOUR_AZURE_OPENAI_RESOURCE.openai.azure.com/ | Your Azure OpenAI Resource name. Get it in the [Azure Portal](https://portal.azure.com)|
 |OPENAI_API_KEY| YOUR_AZURE_OPENAI_KEY | Your Azure OpenAI API Key. Get it in the [Azure Portal](https://portal.azure.com)|
 |REDIS_ADDRESS| api | URL for Redis Stack: "api" for docker compose|
