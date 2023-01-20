@@ -11,11 +11,11 @@ def analyze_ocr(formUrl, translate_enabled=False):
     poller = document_analysis_client.begin_analyze_document_from_url(
             "prebuilt-layout", formUrl)
     result = poller.result()
-    results = [x.content for x in result.paragraphs if x.role not in ['title', 'sectionHeading', 'footnote', 'pageHeader', 'pageFooter', 'pageNumber']]
+    results = ' '.join([x.content for x in result.paragraphs if x.role not in ['title', 'sectionHeading', 'footnote', 'pageHeader', 'pageFooter', 'pageNumber']])
     if translate_enabled:
-        content_en = translate(result.content)
+        content_en = translate(results)
     else:
-        content_en = result.content
+        content_en = results
     return content_en
     
 #Translates text (if not english) -- Possible improvement: checkbox to let user decide if they want to translate
