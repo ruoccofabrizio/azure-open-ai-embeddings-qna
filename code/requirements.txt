@@ -9,3 +9,4 @@ redis==4.4.2
 python-dotenv==0.21.0
 azure-ai-formrecognizer==3.2.0
 azure-storage-blob==12.14.1
+requests==2.28.2
