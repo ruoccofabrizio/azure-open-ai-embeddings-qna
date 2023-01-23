@@ -43,7 +43,7 @@ def get_all_files():
             converted_files[blob.name] = f"https://{account_name}.blob.core.windows.net/{container_name}/{blob.name}?{sas}"
 
     for file in files:
-        converted_filename = f"converted/{file['filename']}.txt"
+        converted_filename = f"converted/{file['filename']}.zip"
         if converted_filename in converted_files:
             file['converted'] = True
             file['converted_path'] = converted_files[converted_filename]
