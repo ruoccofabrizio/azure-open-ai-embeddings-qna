@@ -1,0 +1,287 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "ResourcePrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "provide a 2-13 character prefix for all resources."
+      }
+    },
+    "ContainerName": {
+      "type": "string",
+      "defaultValue": "redis",
+      "metadata": {
+        "description": "Name of the container"
+      }
+    },
+    "DNSNameLabel": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('ResourcePrefix'), '-redis')]",
+      "metadata": {
+        "description": "DNS Name Label for the Public IP address"
+      }
+    },
+    "RedisPassword": {
+      "type": "securestring",
+      "defaultValue": "redis",
+      "metadata": {
+        "description": "Redis Password"
+      }
+    },
+    "HostingPlanName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('ResourcePrefix'), '-plan')]",
+      "metadata": {
+        "description": "Name of App Service plan"
+      }
+    },
+    "HostingPlanSku": {
+      "type": "string",
+      "defaultValue": "B1",
+      "allowedValues": [
+        "F1",
+        "D1",
+        "B1",
+        "B2",
+        "B3",
+        "S1",
+        "S2",
+        "S3",
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "metadata": {
+        "description": "The pricing tier for the App Service plan"
+      }
+    },
+    "StorageAccountName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('ResourcePrefix'), 'str')]",
+      "metadata": {
+        "description": "Name of Storage Account"
+      }
+    },
+    "WebsiteName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('ResourcePrefix'), '-site')]",
+      "metadata": {
+        "description": "Name of Web App"
+      }
+    },
+    "OpenAIName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of OpenAI Resource"
+      }
+    },
+    "OpenAIKey": {
+      "type": "securestring",
+      "defaultValue": "sk-",
+      "metadata": {
+        "description": "OpenAI API Key"
+      }
+    },
+    "OpenAIEngine": {
+      "type": "string",
+      "defaultValue": "text-davinci-002",
+      "metadata": {
+        "description": "OpenAI Engine"
+      }
+    },
+    "OpenAIEmbeddingsEngineDoc": {
+      "type": "string",
+      "defaultValue": "text-search-davinci-doc-001",
+      "metadata": {
+        "description": "OpenAI Embeddings Engine for Documents"
+      }
+    },
+    "OpenAIEmbeddingsEngineQuery": {
+      "type": "string",
+      "defaultValue": "text-search-davinci-query-001",
+      "metadata": {
+        "description": "OpenAI Embeddings Engine for Queries"
+      }
+    },
+    "FormRecognizerEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Form Recognizer Endpoint"
+      }
+    },
+    "FormRecognizerKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Form Recognizer Key"
+      }
+    }
+  },
+  "variables": {
+    "ContainerImageName": "redis/redis-stack-server:latest",
+    "WebAppImageName": "DOCKER|fruocco/oai-embeddings",
+    "BlobContainerName": "documents",
+    "FileShareName": "redisdata"
+  },
+  "resources": [
+    {
+      "apiVersion": "2020-06-01",
+      "name": "[parameters('HostingPlanName')]",
+      "type": "Microsoft.Web/serverfarms",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "[parameters('HostingPlanSku')]"
+      },
+      "properties": {
+        "name": "[parameters('HostingPlanName')]",
+        "reserved": true
+      },
+      "kind": "linux"
+    },
+    {
+      "apiVersion": "2020-06-01",
+      "name": "[parameters('WebsiteName')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('HostingPlanName'))]"
+      ],
+      "properties": {
+        "serverFarmId": "[parameters('HostingPlanName')]",
+        "siteConfig": {
+          "linuxFxVersion": "[variables('WebAppImageName')]"
+        }
+      }
+    },
+    {
+      "name": "[parameters('StorageAccountName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-08-01",
+      "location": "[resourceGroup().location]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_GRS"
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('StorageAccountName'), '/default/', variables('BlobContainerName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+      ],
+      "properties": {
+        "publicAccess": "None"
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('StorageAccountName'), '/default/', variables('FileShareName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+      ],
+      "properties": {
+
+        "protocolSettings": {
+          "smb": {}
+        },
+        "cors": {
+          "corsRules": []
+        },
+        "shareDeleteRetentionPolicy": {
+          "enabled": true,
+          "days": 7
+        }
+      }
+    },
+
+    {
+      "name": "[parameters('ContainerName')]",
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2021-10-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "containers": [
+          {
+            "name": "[parameters('ContainerName')]",
+            "properties": {
+              "image": "[variables('ContainerImageName')]",
+              "resources": {
+                "requests": {
+                  "cpu": 1,
+                  "memoryInGb": 1.5
+                }
+              },
+              "environmentVariables": [
+                {
+                  "name": "REDIS_ARGS",
+                  "value": "[concat('--requirepass ', parameters('RedisPassword'))]"
+                }
+              ],
+              "ports": [
+                {
+                  "protocol": "TCP",
+                  "port": 6379
+                }
+              ],
+              "volumeMounts": [
+                {
+                  "name": "[variables('FileShareName')]",
+                  "mountPath": "/data"
+                }
+              ]
+            }
+          }
+        ],
+        "osType": "Linux",
+        "ipAddress": {
+          "type": "Public",
+          "ports": [
+            {
+              "protocol": "TCP",
+              "port": 6379
+            }
+          ],
+          "dnsNameLabel": "[parameters('DNSNameLabel')]"
+        },
+        "initContainers": [
+        ],
+        "volumes": [
+          {
+            "name": "[variables('FileShareName')]",
+            "azureFile": {
+              "shareName": "[variables('FileShareName')]",
+              "storageAccountName": "[parameters('StorageAccountName')]",
+              "storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName')), '2021-08-01').keys[0].value]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2021-03-01",
+      "name": "[format('{0}/{1}', parameters('WebsiteName'), 'appsettings')]",
+      "kind": "string",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('WebsiteName'))]"
+      ],
+      "properties": {
+        "OPENAI_ENGINES": "[parameters('OpenAIEngine')]",
+        "OPENAI_EMBEDDINGS_ENGINE_DOC": "[parameters('OpenAIEmbeddingsEngineDoc')]",
+        "OPENAI_EMBEDDINGS_ENGINE_QUERY": "[parameters('OpenAIEmbeddingsEngineQuery')]",
+        "REDIS_ADDRESS": "[concat(parameters('DNSNameLabel'),'.' , resourceGroup().location ,'.azurecontainer.io')]",
+        "REDIS_PASSWORD": "[parameters('RedisPassword')]",
+        "OPENAI_API_BASE": "[concat('https://', parameters('OpenAIName'),'.openai.azure.com/')]",
+        "OPENAI_API_KEY": "[parameters('OpenAIKey')]",
+        "BLOB_ACCOUNT_NAME": "[parameters('StorageAccountName')]",
+        "BLOB_ACCOUNT_KEY": "[listkeys(resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName')), '2015-05-01-preview').key1]",
+        "BLOB_CONTAINER_NAME": "[variables('BlobContainerName')]",
+        "FORM_RECOGNIZER_ENDPOINT": "[parameters('FormRecognizerEndpoint')]",
+        "FORM_RECOGNIZER_KEY": "[parameters('FormRecognizerKey')]"
+      }
+    }
+  ]
+}

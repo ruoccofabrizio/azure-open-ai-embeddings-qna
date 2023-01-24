@@ -6,10 +6,18 @@ A simple web application for a OpenAI-enabled document search. This repo uses Az
 
 # Running this repo
 You have multiple options to run the code:
+-   [Deploy on Azure (WebApp + Redis Stack)](#deploy-on-azure-webapp--redis-stack)
 -   [Run everything locally in Docker (WebApp + Redis Stack)](#run-everything-locally-in-docker-webapp--redis-stack)
 -   [Run everything locally in Python with Conda (WebApp only)](#run-everything-locally-in-python-with-conda-webapp-only)
 -   [Run everything locally in Python with venv](#run-everything-locally-in-python-with-venv)
 -   [Run WebApp locally in Docker against an existing Redis deployment](#run-webapp-locally-in-docker-against-an-existing-redis-deployment)
+
+## Deploy on Azure (WebApp + Redis Stack)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment.json)
+
+Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
+
+Please be aware that you need an existing OpenAI with deployed models (instruction models e.g. text-davinci-003, and embeddings models e.g. text-search-davinci-doc-001 and text-search-davinci-query-001) and Form Recognizer Resource (if you want to extract text out of documents).
 
 ## Run everything locally in Docker (WebApp + Redis Stack)
 
