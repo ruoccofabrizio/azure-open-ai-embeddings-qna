@@ -17,7 +17,10 @@ You have multiple options to run the code:
 
 Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
 
-Please be aware that you need an existing OpenAI with deployed models (instruction models e.g. text-davinci-003, and embeddings models e.g. text-search-davinci-doc-001 and text-search-davinci-query-001) and Form Recognizer Resource (if you want to extract text out of documents).
+Please be aware that you need:
+-   an existing OpenAI with deployed models (instruction models e.g. text-davinci-003, and embeddings models e.g. text-search-davinci-doc-001 and text-search-davinci-query-001) 
+-   an existing Form Recognizer Resource (OPTIONAL - if you want to extract text out of documents)
+-   an existing Translator Resource (OPTIONAL - if you want to translate documents)
 
 ## Run everything locally in Docker (WebApp + Redis Stack)
 

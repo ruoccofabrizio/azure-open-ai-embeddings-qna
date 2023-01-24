@@ -116,6 +116,24 @@
       "metadata": {
         "description": "Form Recognizer Key"
       }
+    },
+    "TranslateEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Translator Endpoint"
+      }
+    },
+    "TranslateKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Translator Key"
+      }
+    },
+    "TranslateRegion": {
+      "type": "string",
+      "metadata": {
+        "description": "Translator Region"
+      }
     }
   },
   "variables": {
@@ -280,7 +298,10 @@
         "BLOB_ACCOUNT_KEY": "[listkeys(resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName')), '2015-05-01-preview').key1]",
         "BLOB_CONTAINER_NAME": "[variables('BlobContainerName')]",
         "FORM_RECOGNIZER_ENDPOINT": "[parameters('FormRecognizerEndpoint')]",
-        "FORM_RECOGNIZER_KEY": "[parameters('FormRecognizerKey')]"
+        "FORM_RECOGNIZER_KEY": "[parameters('FormRecognizerKey')]",
+        "TRANSLATE_ENDPOINT": "[parameters('TranslateEndpoint')]",
+        "TRANSLATE_KEY": "[parameters('TranslateKey')]",
+        "TRANSLATE_REGION": "[parameters('TranslateRegion')]"
       }
     }
   ]
