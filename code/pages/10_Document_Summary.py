@@ -5,7 +5,7 @@ from utilities import utils
 import os
 
 def summarize():
-    _, response = utils.get_summary(get_prompt(), max_tokens=400, model='text-davinci-002')
+    _, response = utils.get_completion(get_prompt(), max_tokens=400, model='text-davinci-002')
     st.session_state['summary'] = response['choices'][0]['text'].encode().decode()
 
 def clear_summary():

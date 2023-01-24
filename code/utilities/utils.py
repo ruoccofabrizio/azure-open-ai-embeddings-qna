@@ -101,7 +101,7 @@ def chunk_and_embed(text: str, engine="text-search-davinci-doc-001"):
     return full_data
 
 
-def get_summary(prompt="", max_tokens=400, model="text-davinci-002"):
+def get_completion(prompt="", max_tokens=400, model="text-davinci-002"):
     response = openai.Completion.create(
         engine=model,
         prompt=prompt,
