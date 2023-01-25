@@ -41,7 +41,7 @@ def search_semantic_redis(df, search_query, n=3, pprint=True, engine='davinci'):
     return res.reset_index()
 
 # Return a semantically aware response using the Completion endpoint
-def get_semantic_answer(df, question, max_tokens=400, explicit_prompt="", model="DaVinci-text", engine='babbage', limit_response=True):
+def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", engine='babbage', limit_response=True, tokens_response=100, temperature=0.0):
 
     restart_sequence = "\n\n"
     question += "\n"
@@ -61,8 +61,8 @@ def get_semantic_answer(df, question, max_tokens=400, explicit_prompt="", model=
     response = openai.Completion.create(
         engine=model,
         prompt=prompt,
-        temperature=0,
-        max_tokens=max_tokens,
+        temperature=temperature,
+        max_tokens=tokens_response,
         top_p=1,
         frequency_penalty=0,
         presence_penalty=0,
