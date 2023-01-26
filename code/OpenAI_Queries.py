@@ -49,15 +49,15 @@ try:
             "OpenAI GPT-3 Model",
             (os.environ['OPENAI_ENGINES'].split(','))
         )
+        st.tokens_response = st.slider("Tokens response length", 100, 500)
+        st.temperature = st.slider("Temperature", 0.0, 1.0, 0.0)
 
-    # col1, col2, col3, col4 = st.columns([9,1,5,1])
-    # with col1:
     question = st.text_input("OpenAI Semantic Answer", default_question)
 
     if question != '':
         if question != st.session_state['question']:
             st.session_state['question'] = question
-            st.session_state['prompt'], st.session_state['response'] = utils.get_semantic_answer(df, question, model=model, engine='davinci', limit_response=st.session_state['limit_response'])
+            st.session_state['prompt'], st.session_state['response'] = utils.get_semantic_answer(df, question, model=model, engine='davinci', limit_response=st.session_state['limit_response'], tokens_response=st.tokens_response, temperature=st.temperature)
             st.write(f"Q: {question}")  
             st.write(st.session_state['response']['choices'][0]['text'])
             with st.expander("Question and Answer Context"):
