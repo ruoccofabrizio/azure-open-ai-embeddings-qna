@@ -5,7 +5,7 @@ from utilities import utils
 import os
 
 def summarize():
-    _, response = utils.get_completion(get_prompt(), max_tokens=400, model='text-davinci-002')
+    _, response = utils.get_completion(get_prompt(), max_tokens=500, model=os.getenv('OPENAI_ENGINES', 'text-davinci-003'))
     st.session_state['summary'] = response['choices'][0]['text'].encode().decode()
 
 def clear_summary():
@@ -36,6 +36,7 @@ try:
     }
     st.set_page_config(layout="wide", menu_items=menu_items)
 
+    st.markdown("## Summarization")
     # radio buttons for summary type
     summary_type = st.radio(
         "Select a type of summarization",
@@ -43,7 +44,7 @@ try:
         key="visibility"
     )
     # text area for user to input text
-    st.session_state['text'] = st.text_area(label="Enter some text to summarize", height=400)
+    st.session_state['text'] = st.text_area(label="Enter some text to summarize",value='A neutron star is the collapsed core of a massive supergiant star, which had a total mass of between 10 and 25 solar masses, possibly more if the star was especially metal-rich.[1] Neutron stars are the smallest and densest stellar objects, excluding black holes and hypothetical white holes, quark stars, and strange stars.[2] Neutron stars have a radius on the order of 10 kilometres (6.2 mi) and a mass of about 1.4 solar masses.[3] They result from the supernova explosion of a massive star, combined with gravitational collapse, that compresses the core past white dwarf star density to that of atomic nuclei.', height=200)
     st.button(label="Summarize", on_click=summarize)
 
     # if summary doesn't exist in the state, make it an empty string
@@ -52,7 +53,7 @@ try:
         summary = st.session_state['summary']
 
     # displaying the summary
-    st.text_area(label="Summary", value=summary, height=200)
+    st.text_area(label="Summary result", value=summary, height=200)
     st.button(label="Clear summary", on_click=clear_summary)
 
     # displaying the prompt that was used to generate the summary
