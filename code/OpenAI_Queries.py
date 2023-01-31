@@ -4,7 +4,7 @@ load_dotenv()
 import streamlit as st
 from urllib.error import URLError
 import pandas as pd
-from utilities import utils
+from utilities import utils, translator
 import os
 
 df = utils.initialize(engine='davinci')
@@ -53,7 +53,13 @@ try:
         st.temperature = st.slider("Temperature", 0.0, 1.0, 0.0)
 
     question = st.text_input("OpenAI Semantic Answer", default_question)
-
+    col1, col2 = st.columns([1,1])
+    with col1:
+        st.text("")
+        translate_enabled = st.checkbox("Translate to ", value=False)
+    with col2:
+        lang = st.selectbox("Language", ('Arabic', 'Chinese', 'Japanese', 'Spanish', 'Italian', 'German', 'French'))
+	
     if question != '':
         if question != st.session_state['question']:
             st.session_state['question'] = question
@@ -68,6 +74,10 @@ try:
             with st.expander("Question and Answer Context"):
                 st.text(st.session_state['prompt'].encode().decode())
 
+    if translate_enabled:
+        st.write(f"Translation to other languages, 翻译成其他语言, النص باللغة العربية")
+        st.write(f"{translator.translate_ar(st.session_state['response']['choices'][0]['text'], lang)}")		
+		
 except URLError as e:
     st.error(
         """
