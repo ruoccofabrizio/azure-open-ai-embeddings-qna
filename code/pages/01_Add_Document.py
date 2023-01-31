@@ -31,9 +31,8 @@ def convert_file(fullpath, filename):
     # Upload the text to Azure Blob Storage
     zip_file = io.BytesIO()
     if st.session_state.translate:
-        text = list(map(lambda x: translate(x), text))
+        text = list(map(lambda x: translate(x, language='en'), text))
     for k, v in enumerate(text):
-        v = translate(v)
         with zipfile.ZipFile(zip_file, mode="a") as archive:
             archive.writestr(f"{k}.txt", v)
     upload_file(zip_file.getvalue(), f"converted/{filename}.zip", content_type='application/zip')
