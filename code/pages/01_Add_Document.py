@@ -63,7 +63,7 @@ try:
 
     with st.expander("Add documents to the knowledge base", expanded=True):
         st.checkbox("Translate document to English", key="translate")
-        uploaded_file = st.file_uploader("Upload a document to add it to the knowledge base", type=['pdf','jpeg','jpg','png','doc','docx'])
+        uploaded_file = st.file_uploader("Upload a document to add it to the knowledge base", type=['pdf','jpeg','jpg','png','doc','docx', 'txt'])
         if uploaded_file is not None:
             # To read file as bytes:
             bytes_data = uploaded_file.getvalue()
@@ -72,8 +72,14 @@ try:
                 # Upload a new file
                 st.session_state['filename'] = uploaded_file.name
                 st.session_state['file_url'] = upload_file(bytes_data, st.session_state['filename'])
-                # # Get OCR with Layout API
-                convert_file(st.session_state['file_url'], st.session_state['filename'])
+
+                if uploaded_file.name.endswith('.txt'):
+                    # Add the text to the embeddings
+                    add_embeddings(uploaded_file.read().decode('utf-8'))
+
+                else:
+                    # Get OCR with Layout API
+                    convert_file(st.session_state['file_url'], st.session_state['filename'])
             
             # pdf_display = f'<iframe src="{st.session_state["file_url"]}" width="700" height="1000" type="application/pdf"></iframe>'
 
