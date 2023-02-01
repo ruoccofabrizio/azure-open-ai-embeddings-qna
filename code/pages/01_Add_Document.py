@@ -17,13 +17,16 @@ def embeddings():
 
 
     token_len = utils.get_token_count(st.session_state['doc_text'])
-    if token_len >= 2046:
-        st.warning(f'Your input text has {token_len} tokens. Please try reducing it (<= 2046) to get a full embeddings representation')
+    if token_len >= 3000:
+        st.warning(f'Your input text has {token_len} tokens. Please try reducing it (<= 3000) to get a full embeddings representation')
 
-def add_embeddings(text):
-    embeddings = utils.chunk_and_embed(text)
-    # Store embeddings in Redis
-    redisembeddings.set_document(embeddings)
+def add_embeddings(text, filename):
+    embeddings = utils.chunk_and_embed(text, filename)
+    if embeddings:
+        # Store embeddings in Redis
+        redisembeddings.set_document(embeddings)
+    else:
+        st.error("No embeddings were created for this document as it's too long. Please keep it under 3000 tokens")
 
 def convert_file(fullpath, filename):
     # Extract the text from the file
@@ -37,7 +40,7 @@ def convert_file(fullpath, filename):
             archive.writestr(f"{k}.txt", v)
     upload_file(zip_file.getvalue(), f"converted/{filename}.zip", content_type='application/zip')
     for t in text:
-        add_embeddings(t)
+        add_embeddings(t, filename)
 
 def delete_row():
     st.session_state['data_to_drop'] 
@@ -75,7 +78,7 @@ try:
 
                 if uploaded_file.name.endswith('.txt'):
                     # Add the text to the embeddings
-                    add_embeddings(uploaded_file.read().decode('utf-8'))
+                    add_embeddings(uploaded_file.read().decode('utf-8'), uploaded_file.name)
 
                 else:
                     # Get OCR with Layout API

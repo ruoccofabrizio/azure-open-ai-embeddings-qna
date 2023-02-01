@@ -15,6 +15,7 @@ VECT_NUMBER = 3155
 
 def create_index(redis_conn: Redis, index_name="embeddings-index", prefix = "embedding",number_of_vectors = VECT_NUMBER, distance_metric:str="COSINE"):
     text = TextField(name="text")
+    filename = TextField(name="filename")
     embeddings = VectorField("embeddings",
                 "HNSW", {
                     "TYPE": "FLOAT32",
@@ -24,7 +25,7 @@ def create_index(redis_conn: Redis, index_name="embeddings-index", prefix = "emb
                 })
     # Create index
     redis_conn.ft(index_name).create_index(
-        fields = [text, embeddings],
+        fields = [text, embeddings, filename],
         definition = IndexDefinition(prefix=[prefix], index_type=IndexType.HASH)
     )
 
@@ -39,18 +40,18 @@ def execute_query(np_vector:np.array, return_fields: list=[], search_type: str="
     params_dict = {"vec_param": np_vector.astype(dtype=np.float32).tobytes()}
 
     results = redis_conn.ft(index_name).search(query, params_dict)
-    return pd.DataFrame(list(map(lambda x: {'id' : x.id, 'text': x.text, 'vector_score': x.vector_score}, results.docs)))
+    return pd.DataFrame(list(map(lambda x: {'id' : x.id, 'text': x.text, 'filename': x.filename, 'vector_score': x.vector_score}, results.docs)))
 
 def get_documents(number_of_results: int=VECT_NUMBER):
     base_query = f'*'
-    return_fields = ['id','text']
+    return_fields = ['id','text','filename']
     query = Query(base_query)\
         .paging(0, number_of_results)\
         .return_fields(*return_fields)\
         .dialect(2)
     results = redis_conn.ft(index_name).search(query)
     if results.docs:
-        return pd.DataFrame(list(map(lambda x: {'id' : x.id, 'text': x.text}, results.docs))).sort_values(by='id')
+        return pd.DataFrame(list(map(lambda x: {'id' : x.id, 'text': x.text, 'filename': x.filename}, results.docs))).sort_values(by='id')
     else:
         return pd.DataFrame()
 
@@ -60,6 +61,7 @@ def set_document(elem):
         f"embedding:{index}",
         mapping={
             "text": elem['text'],
+            "filename": elem['filename'],
             "embeddings": np.array(elem['davinci_search']).astype(dtype=np.float32).tobytes()
         }
     )

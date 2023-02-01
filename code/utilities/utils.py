@@ -48,12 +48,17 @@ def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", 
 
     if explicit_prompt == "":
         res = search_semantic_redis(df, question, n=3, pprint=False, engine=engine)
+        res_text = "\n".join(res['text'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
+
+        question_prompt = os.getenv("QUESTION_PROMPT", "Please reply to the question using only the information present in the text above. If you can't find it, reply 'Not in the text'.\nQuestion: #QUESTION#\nAnswer:")
+        question_prompt = question_prompt.replace("#QUESTION#", question)
+
         if len(res) == 0:
             prompt = f"{question}"
         elif limit_response:
-            prompt = f"{res['text'][0]}{restart_sequence}Please reply to the question using only the information present in this text or reply 'Not in the text': {question}"
+            prompt = f"{res_text}{restart_sequence}{question_prompt}"
         else:
-            prompt = f"{res['text'][0]}{restart_sequence}{question}"
+            prompt = f"{res_text}{restart_sequence}{question}"
             
     else:
         prompt = f"{explicit_prompt}{restart_sequence}{question}"
@@ -83,18 +88,18 @@ def get_embedding(text: str, engine="text-search-davinci-doc-001") -> list[float
     return openai.Embedding.create(input=[text], engine= os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-search-davinci-doc-001'))["data"][0]["embedding"]
 
 
-def chunk_and_embed(text: str, engine="text-search-davinci-doc-001"):
+def chunk_and_embed(text: str, filename="", engine="text-search-davinci-doc-001"):
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
     full_data = {
         "text": text,
+        "filename": filename,
         "davinci_search": None
     }
 
     lenght = len(tokenizer(text)['input_ids'])
-    while lenght > 2046:
-        text = ".".join(text.split('.')[:-2])
-        lenght = len(tokenizer(text)['input_ids'])
+    if lenght > 3000:
+        return None
 
     full_data['davinci_search'] = get_embedding(text)
 

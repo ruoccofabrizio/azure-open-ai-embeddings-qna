@@ -10,16 +10,6 @@ import zipfile
 from utilities import utils, redisembeddings
 import os
 
-def add_embeddings(text):
-    embeddings = utils.chunk_and_embed(text)
-    # Store embeddings in Redis
-    redisembeddings.set_document(embeddings)
-
-    token_len = utils.get_token_count(text)
-    if token_len >= 2046:
-        st.warning(f'Your input text has {token_len} tokens. Please try reducing it (<= 2046) to get a full embeddings representation')
-
-
 ########## START - MAIN ##########
 try:
     # Set page layout to wide screen and menu item
