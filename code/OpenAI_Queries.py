@@ -57,8 +57,8 @@ try:
                 "OpenAI GPT-3 Model",
                 (os.environ['OPENAI_ENGINES'].split(','))
             )
-            st.tokens_response = st.slider("Tokens response length", 100, 500)
-            st.temperature = st.slider("Temperature", 0.0, 1.0, 0.0)
+            st.tokens_response = st.slider("Tokens response length", 100, 500, 400)
+            st.temperature = st.slider("Temperature", 0.0, 1.0, 0.1)
             st.selectbox("Language", [None] + list(available_languages.keys()), key='translation_language')
 
 
