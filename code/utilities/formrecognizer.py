@@ -27,4 +27,24 @@ def analyze_read(formUrl):
         if p.role not in SECTION_TO_EXCLUDE:
             results[output_file_id] += f"{p.content}\n"
 
+    for t in layout.tables:
+        page_number = t.bounding_regions[0].page_number
+        output_file_id = int((page_number - 1 ) / PAGES_PER_FILE)
+
+        if len(results) < output_file_id + 1:
+            results.append('')
+        previous_cell_row=0
+        rowcontent='| '
+        tablecontent = ''
+        for c in t.cells:
+            if c.row_index == previous_cell_row:
+                rowcontent +=  c.content
+                previous_cell_row=c.row_index
+            else:
+                tablecontent += " | " + "\n" + rowcontent
+                rowcontent='| '
+                rowcontent += c.content + " | "
+                previous_cell_row += 1
+        results[output_file_id] += f"{tablecontent}|"
+    print (results)
     return results
