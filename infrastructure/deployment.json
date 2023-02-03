@@ -86,7 +86,7 @@
     },
     "OpenAIEngine": {
       "type": "string",
-      "defaultValue": "text-davinci-002",
+      "defaultValue": "text-davinci-003",
       "metadata": {
         "description": "OpenAI Engine"
       }
