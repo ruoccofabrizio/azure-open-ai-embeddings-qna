@@ -69,16 +69,58 @@ def set_document(elem):
 def delete_document(index):
     redis_conn.delete(f"{index}")
 
+def create_prompt_index(redis_conn: Redis, index_name="prompt-index", prefix = "prompt"):
+    result = TextField(name="result")
+    filename = TextField(name="filename")
+    prompt = TextField(name="prompt")
+    # Create index
+    redis_conn.ft(index_name).create_index(
+        fields = [result, filename, prompt],
+        definition = IndexDefinition(prefix=[prefix], index_type=IndexType.HASH)
+    )
+
+def add_prompt_result(id, result, filename="", prompt=""):
+    redis_conn.hset(
+        f"prompt:{id}",
+        mapping={
+            "result": result,
+            "filename": filename,
+            "prompt": prompt
+        }
+    )
+
+def get_prompt_results(number_of_results: int=VECT_NUMBER):
+    base_query = f'*'
+    return_fields = ['id','result','filename','prompt']
+    query = Query(base_query)\
+        .paging(0, number_of_results)\
+        .return_fields(*return_fields)\
+        .dialect(2)
+    results = redis_conn.ft(prompt_index_name).search(query)
+    if results.docs:
+        return pd.DataFrame(list(map(lambda x: {'id' : x.id, 'result': x.result, 'filename': x.filename, 'prompt': x.prompt}, results.docs))).sort_values(by='id')
+    else:
+        return pd.DataFrame()
+
 # Connect to the Redis server
 redis_conn = Redis(host= os.environ.get('REDIS_ADDRESS','localhost'), port=6379, password=os.environ.get('REDIS_PASSWORD',None)) #api for Docker localhost for local execution
 
 # Check if Redis index exists
 index_name = "embeddings-index"
+prompt_index_name = "prompt-index"
 try:
     if redis_conn.ft(index_name).info():
         print("Index exists")
 except:
     print("Index does not exist")
-    print("Creating index")
+    print("Creating embeddings index")
     # Create index 
     create_index(redis_conn)
+try:
+    if redis_conn.ft(prompt_index_name).info():
+        print("Index exists")
+except:
+    print("Index does not exist")
+    print("Creating prompt index")
+    # Create index 
+    create_prompt_index(redis_conn)
