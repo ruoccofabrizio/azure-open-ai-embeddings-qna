@@ -5,7 +5,7 @@ import streamlit as st
 from urllib.error import URLError
 import pandas as pd
 from utilities import utils, translator
-import os
+import os, re
 
 df = utils.initialize(engine='davinci')
 
@@ -60,6 +60,7 @@ try:
             st.tokens_response = st.slider("Tokens response length", 100, 500, 400)
             st.temperature = st.slider("Temperature", 0.0, 1.0, 0.1)
             st.selectbox("Language", [None] + list(available_languages.keys()), key='translation_language')
+            st.session_state['preprompt'] = st.text_input("Prompt to preapply", value='Please reply to the question using only the information present in the text above. If you can\'t find it, reply \'Answer not found within the knowledge base docs\'')
 
 
     question = st.text_input("OpenAI Semantic Answer", default_question)
@@ -67,15 +68,25 @@ try:
     if question != '':
         if question != st.session_state['question']:
             st.session_state['question'] = question
-            st.session_state['prompt'], st.session_state['response'] = utils.get_semantic_answer(df, question, model=model, engine='davinci', limit_response=st.session_state['limit_response'], tokens_response=st.tokens_response, temperature=st.temperature)
+            preprompt=st.session_state['preprompt']
+            st.session_state['prompt'], st.session_state['response'] = utils.get_semantic_answer(df, question, model=model, engine='davinci', limit_response=st.session_state['limit_response'], tokens_response=st.tokens_response, temperature=st.temperature, preprompt=preprompt)
             st.write(f"Q: {question}")  
-            st.write(st.session_state['response']['choices'][0]['text'])
+            reply= st.session_state['response']['choices'][0]['text']
+            #formatting correctly for st
+            if bool(re.search(r'%€$£^', reply)):
+                st.latex(reply)
+            else:    
+                st.write(reply)
             with st.expander("Question and Answer Context"):
                 st.text(st.session_state['prompt'])
         else:
             st.write(f"Q: {st.session_state['question']}")  
-            st.write(f"{st.session_state['response']['choices'][0]['text']}")
-            with st.expander("Question and Answer Context"):
+            reply= st.session_state['response']['choices'][0]['text']
+            if bool(re.search(r'%€$£^', reply)):
+                st.latex(reply)
+            else:    
+                st.write(reply)
+	    with st.expander("Question and Answer Context"):
                 st.text(st.session_state['prompt'].encode().decode())
 
     if st.session_state['translation_language'] is not None:
