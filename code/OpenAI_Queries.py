@@ -86,7 +86,7 @@ try:
                 st.latex(reply)
             else:    
                 st.write(reply)
-	    with st.expander("Question and Answer Context"):
+            with st.expander("Question and Answer Context"):
                 st.text(st.session_state['prompt'].encode().decode())
 
     if st.session_state['translation_language'] is not None:
