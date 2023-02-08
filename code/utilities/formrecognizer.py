@@ -2,7 +2,7 @@ from azure.core.credentials import AzureKeyCredential
 from azure.ai.formrecognizer import DocumentAnalysisClient
 import os
 
-PAGES_PER_FILE = 4
+PAGES_PER_FILE = 2
 SECTION_TO_EXCLUDE = ['title', 'sectionHeading', 'footnote', 'pageHeader', 'pageFooter', 'pageNumber']
 
 def analyze_read(formUrl):

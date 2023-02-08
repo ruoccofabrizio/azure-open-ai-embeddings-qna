@@ -53,8 +53,8 @@ def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", 
             prompt = f"{question}"
         elif limit_response:
             res_text = "\n".join(res['text'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
-            question_prompt = os.getenv("QUESTION_PROMPT", "Please reply to the question using only the information present in the text above. If you can't find it, reply 'Not in the text'.\nQuestion: #QUESTION#\nAnswer:").replace(r'\n', '\n')
-            question_prompt = question_prompt.replace("#QUESTION#", question)
+            question_prompt = os.getenv("QUESTION_PROMPT", "Please reply to the question using only the information present in the text above. If you can't find it, reply 'Not in the text'.\nQuestion: _QUESTION_\nAnswer:").replace(r'\n', '\n')
+            question_prompt = question_prompt.replace("_QUESTION_", question)
             prompt = f"{res_text}{restart_sequence}{question_prompt}"
         else:
             prompt = f"{res_text}{restart_sequence}{question}"
