@@ -41,7 +41,7 @@ def search_semantic_redis(df, search_query, n=3, pprint=True, engine='davinci'):
     return res.reset_index()
 
 # Return a semantically aware response using the Completion endpoint
-def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", engine='babbage', limit_response=True, tokens_response=100, temperature=0.0):
+def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", engine='babbage', limit_response=True, tokens_response=100, temperature=0.0, preprompt=''):
 
     restart_sequence = "\n\n"
     question += "\n"
@@ -53,9 +53,7 @@ def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", 
             prompt = f"{question}"
         elif limit_response:
             res_text = "\n".join(res['text'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
-            question_prompt = os.getenv("QUESTION_PROMPT", "Please reply to the question using only the information present in the text above. If you can't find it, reply 'Not in the text'.\nQuestion: #QUESTION#\nAnswer:").replace(r'\n', '\n')
-            question_prompt = question_prompt.replace("#QUESTION#", question)
-            prompt = f"{res_text}{restart_sequence}{question_prompt}"
+            prompt = f"{res_text}{restart_sequence}{preprompt}': {question}"
         else:
             prompt = f"{res_text}{restart_sequence}{question}"
             
