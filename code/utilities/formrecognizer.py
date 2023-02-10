@@ -2,7 +2,7 @@ from azure.core.credentials import AzureKeyCredential
 from azure.ai.formrecognizer import DocumentAnalysisClient
 import os
 
-PAGES_PER_EMBEDDINGS = os.getenv('PAGES_PER_EMBEDDINGS', 2)
+PAGES_PER_EMBEDDINGS = int(os.getenv('PAGES_PER_EMBEDDINGS', 2))
 SECTION_TO_EXCLUDE = ['title', 'sectionHeading', 'footnote', 'pageHeader', 'pageFooter', 'pageNumber']
 
 def analyze_read(formUrl):
