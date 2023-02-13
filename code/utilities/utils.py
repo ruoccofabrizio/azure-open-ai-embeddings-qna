@@ -44,21 +44,18 @@ def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", 
     restart_sequence = "\n\n"
     question += "\n"
 
-    if explicit_prompt == "":
-        res = search_semantic_redis(df, question, n=3, pprint=False, engine=engine)
+    res = search_semantic_redis(df, question, n=3, pprint=False, engine=engine)
 
-        if len(res) == 0:
-            prompt = f"{question}"
-        elif limit_response:
-            res_text = "\n".join(res['text'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
-            question_prompt = os.getenv("QUESTION_PROMPT", "Please reply to the question using only the information present in the text above. If you can't find it, reply 'Not in the text'.\nQuestion: _QUESTION_\nAnswer:").replace(r'\n', '\n')
-            question_prompt = question_prompt.replace("_QUESTION_", question)
-            prompt = f"{res_text}{restart_sequence}{question_prompt}"
-        else:
-            prompt = f"{res_text}{restart_sequence}{question}"
-            
+    if len(res) == 0:
+        prompt = f"{question}"
+    elif limit_response:
+        res_text = "\n".join(res['text'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
+        question_prompt = explicit_prompt.replace(r'\n', '\n')
+        question_prompt = question_prompt.replace("_QUESTION_", question)
+        prompt = f"{res_text}{restart_sequence}{question_prompt}"
     else:
-        prompt = f"{explicit_prompt}{restart_sequence}{question}"
+        prompt = f"{res_text}{restart_sequence}{question}"
+            
 
     response = openai.Completion.create(
         engine=model,

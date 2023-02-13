@@ -91,7 +91,7 @@ try:
             st.session_state['doc_text'] = st.text_area(" or Add a new text content and the click on 'Compute Embeddings'", height=600)
 
         with col2:
-            st.session_state['embeddings_model'] = st.selectbox('Embeddings models', (utils.get_embeddings_model()['doc']), disabled=True)
+            st.session_state['embeddings_model'] = st.selectbox('Embeddings models', [utils.get_embeddings_model()['doc']], disabled=True)
             st.button("Compute Embeddings", on_click=embeddings)
 
     with st.expander("View documents in the knowledge base", expanded=False):
