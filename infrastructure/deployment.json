@@ -93,14 +93,14 @@
     },
     "OpenAIEmbeddingsEngineDoc": {
       "type": "string",
-      "defaultValue": "text-search-davinci-doc-001",
+      "defaultValue": "text-embedding-ada-002",
       "metadata": {
         "description": "OpenAI Embeddings Engine for Documents"
       }
     },
     "OpenAIEmbeddingsEngineQuery": {
       "type": "string",
-      "defaultValue": "text-search-davinci-query-001",
+      "defaultValue": "text-embedding-ada-002",
       "metadata": {
         "description": "OpenAI Embeddings Engine for Queries"
       }
