@@ -5,7 +5,7 @@ import streamlit as st
 from urllib.error import URLError
 import pandas as pd
 from utilities import utils, translator
-import os, re
+import os
 
 df = utils.initialize(engine='davinci')
 
@@ -22,7 +22,7 @@ try:
     if 'question' not in st.session_state:
         st.session_state['question'] = default_question
     if 'prompt' not in st.session_state:
-        st.session_state['prompt'] = default_prompt        
+        st.session_state['prompt'] = os.getenv("QUESTION_PROMPT", "Please reply to the question using only the information present in the text above. If you can't find it, reply 'Not in the text'.\nQuestion: _QUESTION_\nAnswer:").replace(r'\n', '\n')
     if 'response' not in st.session_state:
         st.session_state['response'] = {
             "choices" :[{
@@ -31,6 +31,8 @@ try:
         }    
     if 'limit_response' not in st.session_state:
         st.session_state['limit_response'] = True
+    if 'full_prompt' not in st.session_state:
+        st.session_state['full_prompt'] = ""
 
     # Set page layout to wide screen and menu item
     menu_items = {
@@ -57,10 +59,10 @@ try:
                 "OpenAI GPT-3 Model",
                 (os.environ['OPENAI_ENGINES'].split(','))
             )
+            st.text_area("Prompt",height=100, key='prompt')
             st.tokens_response = st.slider("Tokens response length", 100, 500, 400)
             st.temperature = st.slider("Temperature", 0.0, 1.0, 0.1)
             st.selectbox("Language", [None] + list(available_languages.keys()), key='translation_language')
-            st.session_state['preprompt'] = st.text_input("Prompt to preapply", value='Please reply to the question using only the information present in the text above. If you can\'t find it, reply \'Answer not found within the knowledge base docs\'')
 
 
     question = st.text_input("OpenAI Semantic Answer", default_question)
@@ -68,26 +70,16 @@ try:
     if question != '':
         if question != st.session_state['question']:
             st.session_state['question'] = question
-            preprompt=st.session_state['preprompt']
-            st.session_state['prompt'], st.session_state['response'] = utils.get_semantic_answer(df, question, model=model, engine='davinci', limit_response=st.session_state['limit_response'], tokens_response=st.tokens_response, temperature=st.temperature, preprompt=preprompt)
+            st.session_state['full_prompt'], st.session_state['response'] = utils.get_semantic_answer(df, question, st.session_state['prompt'] ,model=model, engine='davinci', limit_response=st.session_state['limit_response'], tokens_response=st.tokens_response, temperature=st.temperature)
             st.write(f"Q: {question}")  
-            reply= st.session_state['response']['choices'][0]['text']
-            #formatting correctly for st
-            if bool(re.search(r'%€$£^', reply)):
-                st.latex(reply)
-            else:    
-                st.write(reply)
+            st.write(st.session_state['response']['choices'][0]['text'])
             with st.expander("Question and Answer Context"):
-                st.text(st.session_state['prompt'])
+                st.text(st.session_state['full_prompt'])
         else:
             st.write(f"Q: {st.session_state['question']}")  
-            reply= st.session_state['response']['choices'][0]['text']
-            if bool(re.search(r'%€$£^', reply)):
-                st.latex(reply)
-            else:    
-                st.write(reply)
+            st.write(f"{st.session_state['response']['choices'][0]['text']}")
             with st.expander("Question and Answer Context"):
-                st.text(st.session_state['prompt'].encode().decode())
+                st.text(st.session_state['full_prompt'].encode().decode())
 
     if st.session_state['translation_language'] is not None:
         st.write(f"Translation to other languages, 翻译成其他语言, النص باللغة العربية")
