@@ -79,7 +79,7 @@ def get_embedding(text: str, engine="text-embedding-ada-002") -> list[float]:
     text = text.replace("\n", " ")
     EMBEDDING_ENCODING = 'cl100k_base' if engine == 'text-embedding-ada-002' else 'gpt2'
     encoding = tiktoken.get_encoding(EMBEDDING_ENCODING)
-    return openai.Embedding.create(input=encoding.encode(text), engine='text-embedding-ada-002')["data"][0]["embedding"]
+    return openai.Embedding.create(input=encoding.encode(text), engine=engine)["data"][0]["embedding"]
 
 
 def chunk_and_embed(text: str, filename="", engine="text-embedding-ada-002"):
@@ -93,7 +93,9 @@ def chunk_and_embed(text: str, filename="", engine="text-embedding-ada-002"):
     }
 
     lenght = len(encoding.encode(text))
-    if lenght > 2000 if engine == 'text-embedding-ada-002' else 3000:
+    if engine == 'text-embedding-ada-002' and lenght > 2000:
+        return None
+    elif lenght > 3000:
         return None
 
     full_data['search_embeddings'] = get_embedding(text, engine)
