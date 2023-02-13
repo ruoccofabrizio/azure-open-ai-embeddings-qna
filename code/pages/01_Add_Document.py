@@ -12,7 +12,6 @@ from utilities.translator import translate
 def embeddings():
     embeddings = utils.chunk_and_embed(st.session_state['doc_text'])
     # Store embeddings in Redis
-    print(embeddings.keys())
     redisembeddings.set_document(embeddings)
 
 
@@ -92,7 +91,7 @@ try:
             st.session_state['doc_text'] = st.text_area(" or Add a new text content and the click on 'Compute Embeddings'", height=600)
 
         with col2:
-            st.session_state['embeddings_model'] = st.selectbox('Embeddings models', (os.environ['OPENAI_EMBEDDINGS_ENGINE_DOC'].split(',')))
+            st.session_state['embeddings_model'] = st.selectbox('Embeddings models', (utils.get_embeddings_model()['doc']), disabled=True)
             st.button("Compute Embeddings", on_click=embeddings)
 
     with st.expander("View documents in the knowledge base", expanded=False):

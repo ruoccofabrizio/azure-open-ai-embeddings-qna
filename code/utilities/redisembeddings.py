@@ -9,8 +9,13 @@ from pprint import pprint
 import uuid
 import os
 
+embeddings_dims = {
+    "text-search-davinci-doc-001": 12288,
+    "text-embedding-ada-002": 1536
+}
+
 # Redis configuration
-DIM = 12288
+DIM = embeddings_dims[os.getenv("OPENAI_EMBEDDINGS_ENGINE_DOC", "text-embedding-ada-002")]
 VECT_NUMBER = 3155
 
 def create_index(redis_conn: Redis, index_name="embeddings-index", prefix = "embedding",number_of_vectors = VECT_NUMBER, distance_metric:str="COSINE"):
@@ -62,7 +67,7 @@ def set_document(elem):
         mapping={
             "text": elem['text'],
             "filename": elem['filename'],
-            "embeddings": np.array(elem['davinci_search']).astype(dtype=np.float32).tobytes()
+            "embeddings": np.array(elem['search_embeddings']).astype(dtype=np.float32).tobytes()
         }
     )
 
