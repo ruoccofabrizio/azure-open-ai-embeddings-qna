@@ -2,7 +2,7 @@ from azure.core.credentials import AzureKeyCredential
 from azure.ai.formrecognizer import DocumentAnalysisClient
 import os
 
-PAGES_PER_FILE = 4
+PAGES_PER_EMBEDDINGS = int(os.getenv('PAGES_PER_EMBEDDINGS', 2))
 SECTION_TO_EXCLUDE = ['title', 'sectionHeading', 'footnote', 'pageHeader', 'pageFooter', 'pageNumber']
 
 def analyze_read(formUrl):
@@ -19,7 +19,7 @@ def analyze_read(formUrl):
     page_result = ''
     for p in layout.paragraphs:
         page_number = p.bounding_regions[0].page_number
-        output_file_id = int((page_number - 1 ) / PAGES_PER_FILE)
+        output_file_id = int((page_number - 1 ) / PAGES_PER_EMBEDDINGS)
 
         if len(results) < output_file_id + 1:
             results.append('')
@@ -29,7 +29,8 @@ def analyze_read(formUrl):
 
     for t in layout.tables:
         page_number = t.bounding_regions[0].page_number
-        output_file_id = int((page_number - 1 ) / PAGES_PER_FILE)
+        output_file_id = int((page_number - 1 ) / PAGES_PER_EMBEDDINGS)
+        
         if len(results) < output_file_id + 1:
             results.append('')
         previous_cell_row=0
