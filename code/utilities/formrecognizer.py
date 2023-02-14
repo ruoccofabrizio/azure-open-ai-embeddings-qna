@@ -30,7 +30,7 @@ def analyze_read(formUrl):
     for t in layout.tables:
         page_number = t.bounding_regions[0].page_number
         output_file_id = int((page_number - 1 ) / PAGES_PER_EMBEDDINGS)
-
+        
         if len(results) < output_file_id + 1:
             results.append('')
         previous_cell_row=0
@@ -38,13 +38,11 @@ def analyze_read(formUrl):
         tablecontent = ''
         for c in t.cells:
             if c.row_index == previous_cell_row:
-                rowcontent +=  c.content
-                previous_cell_row=c.row_index
+                rowcontent +=  c.content + " | "
             else:
-                tablecontent += " | " + "\n" + rowcontent
-                rowcontent='| '
+                tablecontent += rowcontent + "\n"
+                rowcontent='|'
                 rowcontent += c.content + " | "
                 previous_cell_row += 1
         results[output_file_id] += f"{tablecontent}|"
-    print (results)
     return results
