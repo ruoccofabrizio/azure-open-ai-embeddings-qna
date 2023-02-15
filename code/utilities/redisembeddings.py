@@ -6,7 +6,7 @@ import typing as t
 import numpy as np
 import pandas as pd
 from pprint import pprint
-import uuid
+import hashlib
 import os
 
 embeddings_dims = {
@@ -61,7 +61,11 @@ def get_documents(number_of_results: int=VECT_NUMBER):
         return pd.DataFrame()
 
 def set_document(elem):
-    index = str(uuid.uuid4())
+    # Connect to the Redis server
+    redis_conn = Redis(host= os.environ.get('REDIS_ADDRESS','localhost'), port=6379, password=os.environ.get('REDIS_PASSWORD',None)) 
+    # Set Data
+    hash_object = hashlib.sha1(elem['filename'].encode('utf-8'))
+    index = hash_object.hexdigest()
     redis_conn.hset(
         f"embedding:{index}",
         mapping={

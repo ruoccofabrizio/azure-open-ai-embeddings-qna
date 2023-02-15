@@ -2,10 +2,12 @@ import pandas as pd
 import numpy as np
 from openai.embeddings_utils import get_embedding, cosine_similarity
 import openai
-import os
+import os, io, zipfile
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from transformers import GPT2Tokenizer
-from utilities.redisembeddings import execute_query, get_documents
+from utilities.redisembeddings import execute_query, get_documents, set_document
+from utilities.formrecognizer import analyze_read
+from utilities.azureblobstorage import upload_file, upsert_blob_metadata
 import tiktoken
 
 def initialize(engine='davinci'):
@@ -83,6 +85,7 @@ def get_embedding(text: str, engine="text-embedding-ada-002") -> list[float]:
 
 
 def chunk_and_embed(text: str, filename="", engine="text-embedding-ada-002"):
+    text = text.replace("\n", " ")
     EMBEDDING_ENCODING = 'cl100k_base' if engine == 'text-embedding-ada-002' else 'gpt2'
     encoding = tiktoken.get_encoding(EMBEDDING_ENCODING)
 
@@ -132,3 +135,28 @@ def get_embeddings_model():
         "doc": OPENAI_EMBEDDINGS_ENGINE_DOC,
         "query": OPENAI_EMBEDDINGS_ENGINE_QUERY
     }
+
+
+def add_embeddings(text, filename, engine="text-embedding-ada-002"):
+    embeddings = chunk_and_embed(text, filename, engine)
+    if embeddings:
+        # Store embeddings in Redis
+        set_document(embeddings)
+    else:
+        st.error("No embeddings were created for this document as it's too long. Please keep it under 3000 tokens")
+
+
+def convert_file_and_add_embeddings(fullpath, filename, enable_translation=False):
+    # Extract the text from the file
+    text = analyze_read(fullpath)
+    # Upload the text to Azure Blob Storage
+    zip_file = io.BytesIO()
+    if enable_translation:
+        text = list(map(lambda x: translate(x), text))
+    for k, v in enumerate(text):
+        with zipfile.ZipFile(zip_file, mode="a") as archive:
+            archive.writestr(f"{k}.txt", v)
+    upload_file(zip_file.getvalue(), f"converted/{filename}.zip", content_type='application/zip')
+    upsert_blob_metadata(filename, {"converted": "true"})
+    for k, t in enumerate(text):
+        add_embeddings(t, f"{filename}_chunk_{k}", os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002'))

@@ -1,3 +1,5 @@
+azure-functions
+
 streamlit==1.17.0
 openai==0.26.5
 matplotlib==3.6.3
@@ -11,3 +13,4 @@ azure-ai-formrecognizer==3.2.0
 azure-storage-blob==12.14.1
 requests==2.28.2
 tiktoken==0.2.0
+azure-storage-queue==12.5.0

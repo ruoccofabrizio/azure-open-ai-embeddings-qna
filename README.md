@@ -6,13 +6,13 @@ A simple web application for a OpenAI-enabled document search. This repo uses Az
 
 # Running this repo
 You have multiple options to run the code:
--   [Deploy on Azure (WebApp + Redis Stack)](#deploy-on-azure-webapp--redis-stack)
--   [Run everything locally in Docker (WebApp + Redis Stack)](#run-everything-locally-in-docker-webapp--redis-stack)
+-   [Deploy on Azure (WebApp + Redis Stack + Batch Processing)](#deploy-on-azure-webapp--redis-stack--batch-processing)
+-   [Run everything locally in Docker (WebApp + Redis Stack + Batch Processing)](#run-everything-locally-in-docker-webapp--redis-stack--batch-processing)
 -   [Run everything locally in Python with Conda (WebApp only)](#run-everything-locally-in-python-with-conda-webapp-only)
 -   [Run everything locally in Python with venv](#run-everything-locally-in-python-with-venv)
 -   [Run WebApp locally in Docker against an existing Redis deployment](#run-webapp-locally-in-docker-against-an-existing-redis-deployment)
 
-## Deploy on Azure (WebApp + Redis Stack)
+## Deploy on Azure (WebApp + Redis Stack + Batch Processing)
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment.json)
 
 Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
@@ -22,7 +22,7 @@ Please be aware that you need:
 -   an existing Form Recognizer Resource (OPTIONAL - if you want to extract text out of documents)
 -   an existing Translator Resource (OPTIONAL - if you want to translate documents)
 
-## Run everything locally in Docker (WebApp + Redis Stack)
+## Run everything locally in Docker (WebApp + Redis Stack + Batch Processing)
 
 First, clone the repo:
 
@@ -60,6 +60,11 @@ You can run a local Redis instance via:
  docker run -p 6379:6379 redis/redis-stack-server:latest
 ```
 
+You can run a local Batch Processing Azure Function:
+```console
+ docker run -p 7071:80 fruocco/oai-batch:latest
+```
+
 Create `conda` environment for Python:
 
 ```console
@@ -81,6 +86,11 @@ This requires Redis running somewhere and expects that you've setup `.env` as de
 You can run a local Redis instance via:
 ```console
  docker run -p 6379:6379 redis/redis-stack-server:latest
+```
+
+You can run a local Batch Processing Azure Function:
+```console
+ docker run -p 7071:80 fruocco/oai-batch:latest
 ```
 
 Please ensure you have Python 3.9+ installed.
@@ -142,6 +152,7 @@ Here is the explanation of the parameters:
 |REDIS_ADDRESS| api | URL for Redis Stack: "api" for docker compose|
 |REDIS_PASSWORD| redis-stack-password | OPTIONAL - Password for your Redis Stack|
 |REDIS_ARGS | --requirepass redis-stack-password | OPTIONAL - Password for your Redis Stack|
+|CONVERT_ADD_EMBEDDINGS_URL| http://batch/api/BatchStartProcessing | URL for Batch processing Function: "http://batch/api/BatchStartProcessing" for docker compose |
 
 
 Optional parameters for additional features (e.g. document text extraction with OCR):
