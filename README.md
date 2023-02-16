@@ -47,9 +47,10 @@ docker compose up
 
 Open your browser at [http://localhost:8080](http://localhost:8080)
 
-This will spin up two Docker containers:
+This will spin up three Docker containers:
 -   The WebApp itself
 -   Redis Stack for storing the embeddings
+-   Batch Processing Azure Function
 
 ## Run everything locally in Python with Conda (WebApp only)
 
