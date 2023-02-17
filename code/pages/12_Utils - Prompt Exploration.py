@@ -55,7 +55,7 @@ try:
 
         cols = st.columns([1,1,1,2])
         with cols[1]:
-            st.multiselect("Select documents", sorted(list(filter(lambda x: '_chunk_' not in x, data['filename'].to_list()))), key="selected_docs")
+            st.multiselect("Select documents", sorted(list(set(map(lambda x: x.partition('_chunk_')[0], data['filename'].to_list())))), key="selected_docs")
         with cols[2]:
             st.text("-")
             st.button("Execute task on docs", on_click=process_all, args=(data,)) 
