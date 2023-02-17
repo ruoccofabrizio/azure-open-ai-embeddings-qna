@@ -154,6 +154,8 @@ Here is the explanation of the parameters:
 |REDIS_PASSWORD| redis-stack-password | OPTIONAL - Password for your Redis Stack|
 |REDIS_ARGS | --requirepass redis-stack-password | OPTIONAL - Password for your Redis Stack|
 |CONVERT_ADD_EMBEDDINGS_URL| http://batch/api/BatchStartProcessing | URL for Batch processing Function: "http://batch/api/BatchStartProcessing" for docker compose |
+|AzureWebJobsStorage | AZURE_BLOB_STORAGE_CONNECTION_STRING_FOR_AZURE_FUNCTION_EXECUTION | Azure Blob Storage Connection string for Azure Function - Batch Processing |
+
 
 
 Optional parameters for additional features (e.g. document text extraction with OCR):
