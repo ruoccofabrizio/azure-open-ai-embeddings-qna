@@ -107,9 +107,13 @@ def get_prompt_results(number_of_results: int=VECT_NUMBER):
         .dialect(2)
     results = redis_conn.ft(prompt_index_name).search(query)
     if results.docs:
-        return pd.DataFrame(list(map(lambda x: {'id' : x.id, 'result': x.result, 'filename': x.filename, 'prompt': x.prompt}, results.docs))).sort_values(by='id')
+        return pd.DataFrame(list(map(lambda x: {'id' : x.id, 'filename': x.filename, 'prompt': x.prompt, 'result': x.result.replace('\n',' ').replace('\r',' '),}, results.docs))).sort_values(by='id')
     else:
         return pd.DataFrame()
+
+def delete_prompt_results(prefix="prompt*"):
+    keys = redis_conn.keys(prefix)
+    redis_conn.delete(*keys)
 
 # Connect to the Redis server
 redis_conn = Redis(host= os.environ.get('REDIS_ADDRESS','localhost'), port=6379, password=os.environ.get('REDIS_PASSWORD',None)) #api for Docker localhost for local execution

@@ -12,6 +12,7 @@ def customcompletion():
     st.session_state['result'] = response['choices'][0]['text'].encode().decode()
 
 def process_all(data):
+    redisembeddings.delete_prompt_results('prompt*')
     for doc in data.to_dict('records')[0:st.session_state['num_docs']]:
         print(doc['text'])
         prompt = f"{doc['text']}\n{st.session_state['input_prompt']}"
