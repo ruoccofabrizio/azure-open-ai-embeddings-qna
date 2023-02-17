@@ -113,7 +113,8 @@ def get_prompt_results(number_of_results: int=VECT_NUMBER):
 
 def delete_prompt_results(prefix="prompt*"):
     keys = redis_conn.keys(prefix)
-    redis_conn.delete(*keys)
+    if keys:
+        redis_conn.delete(*keys)
 
 # Connect to the Redis server
 redis_conn = Redis(host= os.environ.get('REDIS_ADDRESS','localhost'), port=6379, password=os.environ.get('REDIS_PASSWORD',None)) #api for Docker localhost for local execution

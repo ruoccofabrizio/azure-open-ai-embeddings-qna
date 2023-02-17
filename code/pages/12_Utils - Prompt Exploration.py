@@ -13,11 +13,11 @@ def customcompletion():
 
 def process_all(data):
     redisembeddings.delete_prompt_results('prompt*')
-    for doc in data.to_dict('records')[0:st.session_state['num_docs']]:
-        print(doc['text'])
-        prompt = f"{doc['text']}\n{st.session_state['input_prompt']}"
-        _, response = utils.get_completion(prompt, max_tokens=1000, model=os.getenv('OPENAI_ENGINES', 'text-davinci-003'))
-        redisembeddings.add_prompt_result(doc['id'], response['choices'][0]['text'].encode().decode(), doc['filename'], st.session_state['input_prompt'])
+    for doc in data.to_dict('records'):
+        if doc['filename'].partition('_chunk_')[0] in st.session_state['selected_docs']:
+            prompt = f"{doc['text']}\n{st.session_state['input_prompt']}"
+            _, response = utils.get_completion(prompt, max_tokens=1000, model=os.getenv('OPENAI_ENGINES', 'text-davinci-003'))
+            redisembeddings.add_prompt_result(doc['id'], response['choices'][0]['text'].encode().decode(), doc['filename'], st.session_state['input_prompt'])
     st.session_state['data_processed'] = redisembeddings.get_prompt_results().to_csv(index=False)
 
 try:
@@ -54,12 +54,12 @@ try:
             st.text_area(label="Result", value=result, height=400)
 
         cols = st.columns([1,1,1,2])
-        with cols[0]:
-            st.number_input("Number of docs to process", value=10 if len(data) > 10 else len(data), min_value=1, max_value=len(data), key="num_docs")
         with cols[1]:
+            st.multiselect("Select documents", sorted(list(filter(lambda x: '_chunk_' not in x, data['filename'].to_list()))), key="selected_docs")
+        with cols[2]:
             st.text("-")
             st.button("Execute task on docs", on_click=process_all, args=(data,)) 
-        with cols[2]:
+        with cols[3]:
             st.text("-")
             download_data = st.session_state['data_processed'] if st.session_state['data_processed'] is not None else ""
             st.download_button(label="Download results", data=download_data, file_name="results.csv", mime="text/csv", disabled=st.session_state['data_processed'] is None)
