@@ -5,4 +5,4 @@ WORKDIR /usr/local/src/myscripts
 RUN pip install -r requirements.txt
 COPY . /usr/local/src/myscripts
 EXPOSE 80
-CMD ["streamlit", "run", "OpenAI_Queries.py", "--server.port", "80", "--server.enableXsrfProtection", "false"]
+CMD ["streamlit", "run", "demo.py", "--server.port", "80", "--server.enableXsrfProtection", "false"]

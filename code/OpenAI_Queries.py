@@ -74,7 +74,7 @@ try:
             st.write(f"Q: {question}")  
             st.write(st.session_state['response']['choices'][0]['text'])
             with st.expander("Question and Answer Context"):
-                st.text(st.session_state['full_prompt'])
+                st.text(st.session_state['full_prompt'].replace('$', '\$')) 
         else:
             st.write(f"Q: {st.session_state['question']}")  
             st.write(f"{st.session_state['response']['choices'][0]['text']}")
