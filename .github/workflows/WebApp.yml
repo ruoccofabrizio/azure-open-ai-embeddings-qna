@@ -1,0 +1,24 @@
+name: WebApp Docker Image
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Docker image
+      run:
+        docker login -u fruocco -p ${{ secrets.DOCKER_TOKEN }}
+        docker build . --file WebApp.Dockerfile --tag fruocco/oai-embeddings:$(date +%s)
+        docker tag fruocco/oai-embeddings:$(date +%s) fruocco/oai-embeddings:latest
+        docker push fruocco/oai-embeddings:$(date +%s)
+        docker push fruocco/oai-embeddings:latest
+        
