@@ -61,16 +61,21 @@ try:
                 content_type = mimetypes.MimeTypes().guess_type(uploaded_file.name)[0]
                 st.session_state['file_url'] = upload_file(bytes_data, st.session_state['filename'], content_type=content_type)
 
+                outcome = False
                 if uploaded_file.name.endswith('.txt'):
                     # Add the text to the embeddings
-                    add_embeddings(uploaded_file.read().decode('utf-8'), uploaded_file.name, os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002'))
+                    outcome = add_embeddings(uploaded_file.read().decode('utf-8'), uploaded_file.name, os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002'))
 
                 else:
                     # Get OCR with Layout API
-                    convert_file_and_add_embeddings(st.session_state['file_url'], st.session_state['filename'], st.session_state['translate'])
+                    outcome = convert_file_and_add_embeddings(st.session_state['file_url'], st.session_state['filename'], st.session_state['translate'])
                 
-                upsert_blob_metadata(uploaded_file.name, {'converted': 'true', 'embeddings_added': 'true'})
-                st.success(f"File {uploaded_file.name} embeddings added to the knowledge base.")
+                upsert_blob_metadata(uploaded_file.name, {'converted': 'true', 'embeddings_added': str(outcome).lower() })
+                
+                if outcome:
+                    st.success(f"File {uploaded_file.name} embeddings added to the knowledge base.")
+
+
             
             # pdf_display = f'<iframe src="{st.session_state["file_url"]}" width="700" height="1000" type="application/pdf"></iframe>'
 

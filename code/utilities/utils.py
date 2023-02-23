@@ -1,3 +1,4 @@
+import streamlit as st
 import pandas as pd
 import numpy as np
 from openai.embeddings_utils import get_embedding, cosine_similarity
@@ -137,16 +138,27 @@ def get_embeddings_model():
     }
 
 
-def add_embeddings(text, filename, engine="text-embedding-ada-002"):
+def add_embeddings(text, filename, engine="text-embedding-ada-002") -> bool:
+    """
+
+    Returns:
+        bool: Indicates whether the text was successfully converted to an embeddings, text larger than 3000 tokens will fail.
+     """
     embeddings = chunk_and_embed(text, filename, engine)
     if embeddings:
         # Store embeddings in Redis
         set_document(embeddings)
+        return True
     else:
         st.error("No embeddings were created for this document as it's too long. Please keep it under 3000 tokens")
+        return False
 
 
-def convert_file_and_add_embeddings(fullpath, filename, enable_translation=False):
+def convert_file_and_add_embeddings(fullpath, filename, enable_translation=False) -> bool:
+    """
+    Returns:
+        bool: Indicates whether the entire text was successfully added to the embeddings
+    """
     # Extract the text from the file
     text = analyze_read(fullpath)
     # Upload the text to Azure Blob Storage
@@ -158,5 +170,9 @@ def convert_file_and_add_embeddings(fullpath, filename, enable_translation=False
             archive.writestr(f"{k}.txt", v)
     upload_file(zip_file.getvalue(), f"converted/{filename}.zip", content_type='application/zip')
     upsert_blob_metadata(filename, {"converted": "true"})
+    
+    add_embedding_outcomes = []
     for k, t in enumerate(text):
-        add_embeddings(t, f"{filename}_chunk_{k}", os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002'))
+        add_embedding_outcomes.append(add_embeddings(t, f"{filename}_chunk_{k}", os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002')))
+    
+    return all(add_embedding_outcomes)
