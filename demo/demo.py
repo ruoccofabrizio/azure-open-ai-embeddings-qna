@@ -21,6 +21,7 @@ with tab1:
         st.write(f"**Question:** {question}")
         st.write(f"**Answer:** {answer}")
         with st.expander("Click here to see the prompt we've used to generate the answer", expanded=False):
+            prompt = prompt.replace('$', '\$')
             st.markdown(f":star: **Short explanation**\n1. The first part of the prompt is the retrieved documents that were likely to contain the answer\n1. The second part is the actual prompt to answer our question\n\n:star: **Prompt:**\n{prompt}")
 with tab2:
     st.write('Try asking questions like:')
