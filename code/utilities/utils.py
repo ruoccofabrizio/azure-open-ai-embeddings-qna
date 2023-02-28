@@ -9,6 +9,11 @@ from utilities.redisembeddings import execute_query, get_documents, set_document
 from utilities.formrecognizer import analyze_read
 from utilities.azureblobstorage import upload_file, upsert_blob_metadata
 import tiktoken
+from typing import List
+
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.vectorstores import FAISS
+from langchain.embeddings import OpenAIEmbeddings
 
 def initialize(engine='davinci'):
     openai.api_type = "azure"
@@ -76,12 +81,45 @@ def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", 
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
-def get_embedding(text: str, engine="text-embedding-ada-002") -> list[float]:
+def get_embedding(text: str, engine="text-embedding-ada-002") -> List[float]:
     # replace newlines, which can negatively affect performance.
     text = text.replace("\n", " ")
     EMBEDDING_ENCODING = 'cl100k_base' if engine == 'text-embedding-ada-002' else 'gpt2'
     encoding = tiktoken.get_encoding(EMBEDDING_ENCODING)
     return openai.Embedding.create(input=encoding.encode(text), engine=engine)["data"][0]["embedding"]
+
+def split_and_embed(text: str, filename="", chunk_size=1500, separator=" ", engine="text-embedding-ada-002"):
+    # Here we split the documents, as needed, into smaller chunks.
+    # We do this due to the context limits of the LLMs.
+    text_splitter = CharacterTextSplitter(chunk_size=chunk_size, separator=separator)
+    docs = []
+    metadatas = []
+    full_data_arr = []
+    
+    splits = text_splitter.split_text(text)
+
+    docs.extend(splits)
+    metadatas.extend([{"source": filename}] * len(splits))
+
+    # for each document in docs, convert to bytes and upload to Azure Blob Storage
+    for i, doc in enumerate(docs):
+        doc_bytes = doc.encode("utf-8")
+        doc_filename = f"{filename}_part{i:03d}.txt"
+
+        upload_file(doc_bytes, doc_filename)
+        # upsert_blob_metadata(doc_filename, metadatas[i])
+        
+        full_data = {
+            "text": doc,
+            "filename": doc_filename,
+            "search_embeddings": get_embedding(doc, engine)
+        }
+        full_data_arr.append(full_data)
+
+        upsert_blob_metadata(doc_filename, { 'embeddings_added': 'true'})
+    return full_data_arr
+
+
 
 
 def chunk_and_embed(text: str, filename="", engine="text-embedding-ada-002"):
@@ -97,9 +135,9 @@ def chunk_and_embed(text: str, filename="", engine="text-embedding-ada-002"):
     text = text.replace("\n", " ")
     lenght = len(encoding.encode(text))
     if engine == 'text-embedding-ada-002' and lenght > 2000:
-        return None
+        return split_and_embed(text, filename, chunk_size=1500, separator=" ", engine=engine)
     elif lenght > 3000:
-        return None
+        return split_and_embed(text, filename, chunk_size=2500, separator=" ", engine=engine)
 
     full_data['search_embeddings'] = get_embedding(text, engine)
 
@@ -141,7 +179,11 @@ def add_embeddings(text, filename, engine="text-embedding-ada-002"):
     embeddings = chunk_and_embed(text, filename, engine)
     if embeddings:
         # Store embeddings in Redis
-        set_document(embeddings)
+        if isinstance(embeddings, list):
+            for e in embeddings:
+                set_document(e)
+        else:
+            set_document(embeddings)
     else:
         st.error("No embeddings were created for this document as it's too long. Please keep it under 3000 tokens")
 

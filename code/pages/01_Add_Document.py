@@ -12,15 +12,29 @@ from utilities.utils import add_embeddings, convert_file_and_add_embeddings
 import requests
 import mimetypes
 
-def embeddings():
-    embeddings = utils.chunk_and_embed(st.session_state['doc_text'])
-    # Store embeddings in Redis
-    redisembeddings.set_document(embeddings)
+import random
+import string
 
-    # Get token count
-    token_len = utils.get_token_count(st.session_state['doc_text'])
-    if token_len >= 3000:
-        st.warning(f'Your input text has {token_len} tokens. Please try reducing it (<= 3000) to get a full embeddings representation')
+def random_filename():
+    "Generate a random filename, in case just text is added (no file) for embedding"
+    letters = string.ascii_letters
+    return "man_" + "".join(random.choice(letters) for i in range(12))
+
+def embeddings():
+    embeddings = utils.chunk_and_embed(st.session_state['doc_text'], filename=random_filename())
+
+    # Store embeddings in Redis, if the text is longer, will be split in multiple embeddings
+    if isinstance(embeddings, list):
+        for e in embeddings:
+            redisembeddings.set_document(e)
+    else:
+        redisembeddings.set_document(embeddings)
+
+    # # Get token count
+    # token_len = utils.get_token_count(st.session_state['doc_text'])
+    # if token_len >= 3000:
+    #     st.warning(f'Your input text has {token_len} tokens. Please try reducing it (<= 3000) to get a full embeddings representation')
+    st.success(f"Text added to the knowledge base and embeddings generated.")
 
 
 def remote_convert_files_and_add_embeddings():
