@@ -39,14 +39,7 @@ def main(msg: func.QueueMessage) -> None:
                 set_document(e)
         else:
             set_document(data)
-        
-
-        # upsert_blob_metadata(file_name, {'embeddings_added': 'true'})
-
-        # Set the document in Redis, can be a list of embedding in case of larger file
-        for e in data:
-            set_document(e)
-        # set_document(data)
+            
     else:
         file_sas = generate_blob_sas(account_name, container_name, file_name, account_key= account_key, permission='r', expiry=datetime.utcnow() + timedelta(hours=1))
         convert_file_and_add_embeddings(f"https://{account_name}.blob.core.windows.net/{container_name}/{file_name}?{file_sas}" , file_name)
