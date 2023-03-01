@@ -4,22 +4,17 @@
 	"name": "Miniconda (Python 3)",
 	"build": {
 		"context": "..",
-		"dockerfile": "Dockerfile",
+		"dockerfile": "Dockerfile"
 	},
 	// Set *default* container specific settings.json values on container create.
 	"settings": {
-		"python.defaultInterpreterPath": "/opt/conda/bin/python",
+		"python.defaultInterpreterPath": "/usr/local/bin/python",
 	},
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
 		"ms-python.python",
-		"ms-python.vscode-pylance",
-		"ms-toolsai.vscode-ai",
+		"ms-azuretools.vscode-azurefunctions"
 	],
 	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	"remoteUser": "vscode",
-	"features": {
-		"azure-cli": "latest"
-	},
-	"onCreateCommand": "az extension add -n ml -y"
+	"remoteUser": "vscode"
 }
