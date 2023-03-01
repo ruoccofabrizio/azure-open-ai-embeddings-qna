@@ -1,5 +1,5 @@
 azure-functions
-
+langchain
 streamlit==1.17.0
 openai==0.26.5
 matplotlib==3.6.3
