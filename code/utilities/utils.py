@@ -84,13 +84,15 @@ def get_embedding(text: str, engine="text-embedding-ada-002") -> list[float]:
     return openai.Embedding.create(input=encoding.encode(text), engine=engine)["data"][0]["embedding"]
 
 
-def chunk_and_embed(text: str, filename="", engine="text-embedding-ada-002"):
+def chunk_and_embed(text: str, filename="", time="", engine="text-embedding-ada-002"):
     EMBEDDING_ENCODING = 'cl100k_base' if engine == 'text-embedding-ada-002' else 'gpt2'
     encoding = tiktoken.get_encoding(EMBEDDING_ENCODING)
+    print('inside chunk and embed: ', time)
 
     full_data = {
         "text": text,
         "filename": filename,
+        "timestamp": time,
         "search_embeddings": None
     }
 
@@ -137,14 +139,13 @@ def get_embeddings_model():
     }
 
 
-def add_embeddings(text, filename, engine="text-embedding-ada-002"):
-    embeddings = chunk_and_embed(text, filename, engine)
+def add_embeddings(text, filename, time, engine="text-embedding-ada-002"):
+    embeddings = chunk_and_embed(text, filename, time, engine)
     if embeddings:
         # Store embeddings in Redis
         set_document(embeddings)
     else:
-        st.error("No embeddings were created for this document as it's too long. Please keep it under 3000 tokens")
-
+        print("No embeddings were created for this document as it's too long. Please keep it under 3000 tokens")
 
 def convert_file_and_add_embeddings(fullpath, filename, enable_translation=False):
     # Extract the text from the file
