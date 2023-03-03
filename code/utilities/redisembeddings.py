@@ -28,9 +28,10 @@ def create_index(redis_conn: Redis, index_name="embeddings-index", prefix = "emb
                     "DISTANCE_METRIC": distance_metric,
                     "INITIAL_CAP": number_of_vectors,
                 })
+    timeinvideo = TextField(name="timeinvideo")
     # Create index
     redis_conn.ft(index_name).create_index(
-        fields = [text, embeddings, filename],
+        fields = [text, embeddings, filename, timeinvideo],
         definition = IndexDefinition(prefix=[prefix], index_type=IndexType.HASH)
     )
 
@@ -49,14 +50,14 @@ def execute_query(np_vector:np.array, return_fields: list=[], search_type: str="
 
 def get_documents(number_of_results: int=VECT_NUMBER):
     base_query = f'*'
-    return_fields = ['id','text','filename']
+    return_fields = ['id','text','filename','timeinvideo']
     query = Query(base_query)\
         .paging(0, number_of_results)\
         .return_fields(*return_fields)\
         .dialect(2)
     results = redis_conn.ft(index_name).search(query)
     if results.docs:
-        return pd.DataFrame(list(map(lambda x: {'id' : x.id, 'text': x.text, 'filename': x.filename}, results.docs))).sort_values(by='id')
+        return pd.DataFrame(list(map(lambda x: {'id' : x.id, 'text': x.text, 'filename': x.filename, 'timeinvideo': x.timeinvideo}, results.docs))).sort_values(by='id')
     else:
         return pd.DataFrame()
 
@@ -71,9 +72,11 @@ def set_document(elem):
         mapping={
             "text": elem['text'],
             "filename": elem['filename'],
+            "timeinvideo": elem['timestamp'] if 'timestamp' in elem else "",
             "embeddings": np.array(elem['search_embeddings']).astype(dtype=np.float32).tobytes()
         }
     )
+    print("In set_document, docs added: ", index)
 
 def delete_document(index):
     redis_conn.delete(f"{index}")
@@ -81,33 +84,35 @@ def delete_document(index):
 def create_prompt_index(redis_conn: Redis, index_name="prompt-index", prefix = "prompt"):
     result = TextField(name="result")
     filename = TextField(name="filename")
+    timeinvideo = TextField(name="timeinvideo")
     prompt = TextField(name="prompt")
     # Create index
     redis_conn.ft(index_name).create_index(
-        fields = [result, filename, prompt],
+        fields = [result, filename, prompt, timeinvideo],
         definition = IndexDefinition(prefix=[prefix], index_type=IndexType.HASH)
     )
 
-def add_prompt_result(id, result, filename="", prompt=""):
+def add_prompt_result(id, result, filename="", timeinvideo= "", prompt=""):
     redis_conn.hset(
         f"prompt:{id}",
         mapping={
             "result": result,
             "filename": filename,
+            "timeinvideo": timeinvideo,
             "prompt": prompt
         }
     )
 
 def get_prompt_results(number_of_results: int=VECT_NUMBER):
     base_query = f'*'
-    return_fields = ['id','result','filename','prompt']
+    return_fields = ['id','result','filename','timeinvideo','prompt']
     query = Query(base_query)\
         .paging(0, number_of_results)\
         .return_fields(*return_fields)\
         .dialect(2)
     results = redis_conn.ft(prompt_index_name).search(query)
     if results.docs:
-        return pd.DataFrame(list(map(lambda x: {'id' : x.id, 'filename': x.filename, 'prompt': x.prompt, 'result': x.result.replace('\n',' ').replace('\r',' '),}, results.docs))).sort_values(by='id')
+        return pd.DataFrame(list(map(lambda x: {'id' : x.id, 'filename': x.filename, 'timeinvideo': x.timeinvideo, 'prompt': x.prompt, 'result': x.result.replace('\n',' ').replace('\r',' '),}, results.docs))).sort_values(by='id')
     else:
         return pd.DataFrame()
 
