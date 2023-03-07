@@ -46,7 +46,7 @@ def execute_query(np_vector:np.array, return_fields: list=[], search_type: str="
     params_dict = {"vec_param": np_vector.astype(dtype=np.float32).tobytes()}
 
     results = redis_conn.ft(index_name).search(query, params_dict)
-    return pd.DataFrame(list(map(lambda x: {'id' : x.id, 'text': x.text, 'filename': x.filename, 'vector_score': x.vector_score}, results.docs)))
+    return pd.DataFrame(list(map(lambda x: {'id' : x.id, 'text': x.text, 'filename': x.filename, 'timestamp':x.timeinvideo, 'vector_score': x.vector_score}, results.docs)))
 
 def get_documents(number_of_results: int=VECT_NUMBER):
     base_query = f'*'
@@ -76,7 +76,6 @@ def set_document(elem):
             "embeddings": np.array(elem['search_embeddings']).astype(dtype=np.float32).tobytes()
         }
     )
-    print("In set_document, docs added: ", index)
 
 def delete_document(index):
     redis_conn.delete(f"{index}")
