@@ -73,10 +73,10 @@ try:
             st.session_state['full_prompt'], st.session_state['response'], videotime, videoid  = utils.get_semantic_answer(df, question, st.session_state['prompt'] ,model=model, engine='davinci', limit_response=st.session_state['limit_response'], tokens_response=st.tokens_response, temperature=st.temperature)
             st.write(f"Q: {question}")
             gptanswer=st.session_state['response']['choices'][0]
-            print ('gptanswer: ',gptanswer) 
             st.write(gptanswer['text'])
-            st.write('Source of truth in your documents is: ')
-	    st.write(videoindexer.createvideolink(videoid,videotime))
+            url=videoindexer.createvideolink(videoid,videotime)
+            link= '[Link to VideoIndexer player]('+url+')'
+            st.markdown('The source of truth in your documents is: ' + link, unsafe_allow_html=True)
             with st.expander("Question and Answer Context"):
                 st.text(st.session_state['full_prompt'].replace('$', '\$')) 
         else:
