@@ -106,6 +106,7 @@ def ingestvideos():
     print ('All videos done')
 
 def getplayertoken(clientid, clientsecret, tenantid, subsid, rg, videoaccountname, videoid):
+    print('videoid is: ', videoid)
     url = 'https://login.microsoftonline.com/'+tenantid+'/oauth2/v2.0/token'
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -135,9 +136,10 @@ def getplayertoken(clientid, clientsecret, tenantid, subsid, rg, videoaccountnam
     return response.json()['accessToken']
 
 def createvideolink(videoid,timestamp):
+    videoid = videoid.split('_')[0]
     videotoken = getplayertoken(clientid, clientsecret, tenantid, subsid, rg, videoaccountname, videoid)
+    # videoid has a name with underscores and a number, e.g. 123456789_0 remove the number
     timestamp = int(timestamp.split(':')[0])*3600 + int(timestamp.split(':')[1])*60 + int(timestamp.split(':')[2].split('.')[0]) + int(timestamp.split(':')[2].split('.')[1])/1000
     timestamp = int(timestamp)
     url= 'https://www.videoindexer.ai/embed/player/'+videoaccountid+'/'+videoid+'/?accessToken='+videotoken+'&locale=en&location='+videolocation+'&t='+str(timestamp)
-    print(url)
     return url
