@@ -71,7 +71,6 @@ def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", 
     )
 
     print(f"{response['choices'][0]['text'].encode().decode()}\n\n\n")
-
     return prompt,response#, res['page'][0]
 
 
@@ -87,7 +86,7 @@ def get_embedding(text: str, engine="text-embedding-ada-002") -> list[float]:
 def chunk_and_embed(text: str, filename="", time="", engine="text-embedding-ada-002"):
     EMBEDDING_ENCODING = 'cl100k_base' if engine == 'text-embedding-ada-002' else 'gpt2'
     encoding = tiktoken.get_encoding(EMBEDDING_ENCODING)
-    print('inside chunk and embed: ', time)
+    print('inside chunk and embed: ', filename + time)
 
     full_data = {
         "text": text,
