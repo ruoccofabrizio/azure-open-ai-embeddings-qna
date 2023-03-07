@@ -10,9 +10,9 @@ from utilities.azureblobstorage import upload_file, get_all_files, upsert_blob_m
 from utilities.translator import translate
 from utilities.utils import add_embeddings, convert_file_and_add_embeddings
 from utilities.videoindexer import ingestvideos
+
 import requests
 import mimetypes
-
 
 def embeddings():
     embeddings = utils.chunk_and_embed(st.session_state['doc_text'])
@@ -114,10 +114,9 @@ try:
             st.warning("No embeddings found. Copy paste your data in the text input and click on 'Compute Embeddings'.")
         else:
             data
-	
-    st.write("If you need to process videos, please click on the button below. This assumes that you have already ingested") 
-    st.write("your videos in Azure Video Indexer. For more info check: https://learn.microsoft.com/en-us/azure/azure-video-indexer/odrv-download?tabs=With-classic-account")
-    st.button("Ingest videos", on_click=ingest_videos)
+    with st.expander("Ingest video insights from Azure VideoIndexer", expanded=True):
+        st.write("For more info check: https://learn.microsoft.com/en-us/azure/azure-video-indexer/odrv-download?tabs=With-classic-account")
+        st.button("Ingest videos", on_click=ingest_videos)
 
 except URLError as e:
     st.error(
