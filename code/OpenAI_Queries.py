@@ -4,7 +4,7 @@ load_dotenv()
 import streamlit as st
 from urllib.error import URLError
 import pandas as pd
-from utilities import utils, translator
+from utilities import utils, translator, videoindexer
 import os
 
 df = utils.initialize(engine='davinci')
@@ -70,9 +70,13 @@ try:
     if question != '':
         if question != st.session_state['question']:
             st.session_state['question'] = question
-            st.session_state['full_prompt'], st.session_state['response'] = utils.get_semantic_answer(df, question, st.session_state['prompt'] ,model=model, engine='davinci', limit_response=st.session_state['limit_response'], tokens_response=st.tokens_response, temperature=st.temperature)
-            st.write(f"Q: {question}")  
-            st.write(st.session_state['response']['choices'][0]['text'])
+            st.session_state['full_prompt'], st.session_state['response'], videotime, videoid  = utils.get_semantic_answer(df, question, st.session_state['prompt'] ,model=model, engine='davinci', limit_response=st.session_state['limit_response'], tokens_response=st.tokens_response, temperature=st.temperature)
+            st.write(f"Q: {question}")
+            gptanswer=st.session_state['response']['choices'][0]
+            print ('gptanswer: ',gptanswer) 
+            st.write(gptanswer['text'])
+            st.write('Source of truth in your documents is: ')
+	    st.write(videoindexer.createvideolink(videoid,videotime))
             with st.expander("Question and Answer Context"):
                 st.text(st.session_state['full_prompt'].replace('$', '\$')) 
         else:
