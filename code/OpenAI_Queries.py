@@ -76,14 +76,22 @@ try:
             st.write(st.session_state['response']['choices'][0]['text'])
             with st.expander("Question and Answer Context"):
                 st.text(st.session_state['full_prompt'].replace('$', '\$')) 
-            st.write(st.session_state['source_file'])
+            if st.session_state['response']['choices'][0]['text']== ' Not in the text.':
+                print('Not in the text')
+                st.session_state['source_file']=''
+            else:
+                st.write(st.session_state['source_file'])
             
         else:
             st.write(f"Q: {st.session_state['question']}")  
             st.write(f"{st.session_state['response']['choices'][0]['text']}")
             with st.expander("Question and Answer Context"):
                 st.text(st.session_state['full_prompt'].encode().decode())
-            st.write(st.session_state['source_file'])
+            if st.session_state['response']['choices'][0]['text']== ' Not in the text.':
+                st.session_state['source_file']=''
+                print('Not in the text')
+            else:
+                st.write(st.session_state['source_file'])
 
     if st.session_state['translation_language'] is not None:
         st.write(f"Translation to other languages, 翻译成其他语言, النص باللغة العربية")

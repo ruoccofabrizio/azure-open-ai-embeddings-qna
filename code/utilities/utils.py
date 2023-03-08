@@ -52,7 +52,7 @@ def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", 
         prompt = f"{question}"
     else:
         res_text = "\n".join(res['text'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
-        source_files = "\n".join(res['filename'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
+        source_files = "Source:"+"  \n".join(res['filename'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
         question_prompt = explicit_prompt.replace(r'\n', '\n')
         question_prompt = question_prompt.replace("_QUESTION_", question)
         prompt = f"{res_text}{restart_sequence}{question_prompt}"
@@ -69,7 +69,7 @@ def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", 
     )
 
     print(f"{response['choices'][0]['text'].encode().decode()}\n\n\n")
-    print(f"Source:\n{source_files}")
+    print(f"{source_files}")
 
     return prompt,response, source_files#, res['page'][0]
 
