@@ -71,7 +71,7 @@ try:
     if question != '':
         if question != st.session_state['question']:
             st.session_state['question'] = question
-            st.session_state['full_prompt'], st.session_state['response'], st.session_state['source_file'] = utils.get_semantic_answer(df, question, st.session_state['prompt'] ,model=model, engine='davinci', limit_response=st.session_state['limit_response'], tokens_response=st.tokens_response, temperature=st.temperature)
+            st.session_state['full_prompt'], st.session_state['response'], st.session_state['source_file'] = utils.get_semantic_answer(df, question, st.session_state['prompt'] ,model=model, engine='davinci', tokens_response=st.tokens_response, temperature=st.temperature)
             st.write(f"Q: {question}")  
             st.write(st.session_state['response']['choices'][0]['text'])
             with st.expander("Question and Answer Context"):
