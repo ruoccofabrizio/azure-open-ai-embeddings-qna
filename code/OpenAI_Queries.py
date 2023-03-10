@@ -33,7 +33,8 @@ try:
         st.session_state['limit_response'] = True
     if 'full_prompt' not in st.session_state:
         st.session_state['full_prompt'] = ""
-
+    if 'source_file' not in st.session_state:
+        st.session_state['source_file'] = ""
     # Set page layout to wide screen and menu item
     menu_items = {
 	'Get help': None,
@@ -70,16 +71,27 @@ try:
     if question != '':
         if question != st.session_state['question']:
             st.session_state['question'] = question
-            st.session_state['full_prompt'], st.session_state['response'] = utils.get_semantic_answer(df, question, st.session_state['prompt'] ,model=model, engine='davinci', limit_response=st.session_state['limit_response'], tokens_response=st.tokens_response, temperature=st.temperature)
+            st.session_state['full_prompt'], st.session_state['response'], st.session_state['source_file'] = utils.get_semantic_answer(df, question, st.session_state['prompt'] ,model=model, engine='davinci', tokens_response=st.tokens_response, temperature=st.temperature)
             st.write(f"Q: {question}")  
             st.write(st.session_state['response']['choices'][0]['text'])
             with st.expander("Question and Answer Context"):
                 st.text(st.session_state['full_prompt'].replace('$', '\$')) 
+            if st.session_state['response']['choices'][0]['text']== ' Not in the text.':
+                print('Not in the text')
+                st.session_state['source_file']=''
+            else:
+                st.write(st.session_state['source_file'])
+            
         else:
             st.write(f"Q: {st.session_state['question']}")  
             st.write(f"{st.session_state['response']['choices'][0]['text']}")
             with st.expander("Question and Answer Context"):
                 st.text(st.session_state['full_prompt'].encode().decode())
+            if st.session_state['response']['choices'][0]['text']== ' Not in the text.':
+                st.session_state['source_file']=''
+                print('Not in the text')
+            else:
+                st.write(st.session_state['source_file'])
 
     if st.session_state['translation_language'] is not None:
         st.write(f"Translation to other languages, 翻译成其他语言, النص باللغة العربية")
