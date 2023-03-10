@@ -41,7 +41,7 @@ def search_semantic_redis(df, search_query, n=3, pprint=True, engine='davinci'):
     return res.reset_index()
 
 # Return a semantically aware response using the Completion endpoint
-def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", engine='babbage', limit_response=True, tokens_response=100, temperature=0.0):
+def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", engine='babbage',  tokens_response=100, temperature=0.0):
 
     restart_sequence = "\n\n"
     question += "\n"
@@ -50,15 +50,13 @@ def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", 
 
     if len(res) == 0:
         prompt = f"{question}"
-    elif limit_response:
+    else:
         res_text = "\n".join(res['text'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
+        source_files = "Source:"+"  \n".join(res['filename'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
         question_prompt = explicit_prompt.replace(r'\n', '\n')
         question_prompt = question_prompt.replace("_QUESTION_", question)
         prompt = f"{res_text}{restart_sequence}{question_prompt}"
-    else:
-        prompt = f"{res_text}{restart_sequence}{question}"
             
-
     response = openai.Completion.create(
         engine=model,
         prompt=prompt,
@@ -71,8 +69,9 @@ def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", 
     )
 
     print(f"{response['choices'][0]['text'].encode().decode()}\n\n\n")
+    print(f"{source_files}")
 
-    return prompt,response#, res['page'][0]
+    return prompt,response, source_files#, res['page'][0]
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
