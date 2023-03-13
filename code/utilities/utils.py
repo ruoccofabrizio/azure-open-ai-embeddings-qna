@@ -164,4 +164,14 @@ def convert_file_and_add_embeddings(fullpath, filename, enable_translation=False
     upload_file(zip_file.getvalue(), f"converted/{filename}.zip", content_type='application/zip')
     upsert_blob_metadata(filename, {"converted": "true"})
     for k, t in enumerate(text):
-        add_embeddings(t, f"{filename}_chunk_{k}", os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002'))
+        if len(t)//5000>0:
+            for q in range(len(t)//5000):
+                range_end=min([(q+1)*5000,len(t)])
+                chunk=f"{k}_{q}"
+                chunk_text=t[q*5000:range_end]
+                add_embeddings(chunk_text, f"{filename}_chunk_{chunk}", os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002'))
+            #chunk=f"{k}_ending"
+            #chunk_text=t[(len(t)//5000)*5000:]
+            #add_embeddings(chunk_text, f"{filename}_chunk_{chunk}", os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002'))
+        else:  
+            add_embeddings(t, f"{filename}_chunk_{k}", os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002'))
