@@ -69,11 +69,14 @@ def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", 
         presence_penalty=0,
         stop=None
     )
+    
+    if response:
+        print(f"{response['choices'][0]['text'].encode().decode()}\n\n\n")
+        print(f"{source_files}")
+    else:
+        response=''
 
-    print(f"{response['choices'][0]['text'].encode().decode()}\n\n\n")
-    print(f"{source_files}")
-
-    return prompt,response, source_files#, res['page'][0]
+    return prompt, response, source_files#, res['page'][0]
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
