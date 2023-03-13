@@ -50,6 +50,7 @@ def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", 
 
     if len(res) == 0:
         prompt = f"{question}"
+        source_files=['No source']
     else:
         res_text = "\n".join(res['text'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
         source_files = "Source:"+"  \n".join(res['filename'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
