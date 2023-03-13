@@ -9,6 +9,7 @@ from utilities.redisembeddings import execute_query, get_documents, set_document
 from utilities.formrecognizer import analyze_read
 from utilities.azureblobstorage import upload_file, upsert_blob_metadata
 import tiktoken
+import logging
 
 def initialize(engine='davinci'):
     openai.api_type = "azure"
@@ -53,7 +54,7 @@ def get_semantic_answer(df, question, explicit_prompt="", model="DaVinci-text", 
         source_files=['No source']
     else:
         res_text = "\n".join(res['text'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
-        source_files = "Source:"+"  \n".join(res['filename'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
+        source_files = "Source: \n "+"  \n".join(' '+res['filename'][0:int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA",1))])
         question_prompt = explicit_prompt.replace(r'\n', '\n')
         question_prompt = question_prompt.replace("_QUESTION_", question)
         prompt = f"{res_text}{restart_sequence}{question_prompt}"
@@ -85,6 +86,7 @@ def get_embedding(text: str, engine="text-embedding-ada-002") -> list[float]:
 
 
 def chunk_and_embed(text: str, filename="", engine="text-embedding-ada-002"):
+    logging.info(f"chunk_and_embed{filename}")
     EMBEDDING_ENCODING = 'cl100k_base' if engine == 'text-embedding-ada-002' else 'gpt2'
     encoding = tiktoken.get_encoding(EMBEDDING_ENCODING)
 
