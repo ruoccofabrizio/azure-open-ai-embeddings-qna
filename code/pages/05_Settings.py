@@ -20,7 +20,7 @@ try:
     os.environ['OPENAI_API_BASE'] = st.text_input("OpenAI Resource", value=api_base)
     engines = os.getenv('OPENAI_ENGINES','')
     os.environ['OPENAI_ENGINES'] = st.text_input("OpenAI Engine deployed", value=engines, disabled=True)
-    st.session_state['limit_response'] = st.checkbox("Limit response to the provided text", value=st.session_state['limit_response'])
+    #st.session_state['limit_response'] = st.checkbox("Limit response to the provided text", value=st.session_state['limit_response'])
 
 
 except URLError as e:
