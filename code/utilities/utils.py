@@ -163,7 +163,7 @@ def convert_file_and_add_embeddings(fullpath, filename, enable_translation=False
             archive.writestr(f"{k}.txt", v)
     upload_file(zip_file.getvalue(), f"converted/{filename}.zip", content_type='application/zip')
     upsert_blob_metadata(filename, {"converted": "true"})
-    chars=2000
+    chars=3500
     for k, t in enumerate(text):
         if len(t)//chars>0:
             for q in range(len(t)//chars):
