@@ -13,7 +13,7 @@ You have multiple options to run the code:
 -   [Run WebApp locally in Docker against an existing Redis deployment](#run-webapp-locally-in-docker-against-an-existing-redis-deployment)
 
 ## Deploy on Azure (WebApp + Redis Stack + Batch Processing)
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmifurm%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment.json)
 
 Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
 
@@ -27,7 +27,7 @@ Please be aware that you need:
 First, clone the repo:
 
 ```console
-git clone https://github.com/ruoccofabrizio/azure-open-ai-embeddings-qna
+git clone https://github.com/mifurm/azure-open-ai-embeddings-qna
 cd azure-open-ai-embeddings-qna
 ```
 
@@ -63,7 +63,7 @@ You can run a local Redis instance via:
 
 You can run a local Batch Processing Azure Function:
 ```console
- docker run -p 7071:80 fruocco/oai-batch:latest
+ docker run -p 7071:80 mifurm/oai-batch:latest
 ```
 
 Create `conda` environment for Python:
@@ -91,7 +91,7 @@ You can run a local Redis instance via:
 
 You can run a local Batch Processing Azure Function:
 ```console
- docker run -p 7071:80 fruocco/oai-batch:latest
+ docker run -p 7071:80 mifurm/oai-batch:latest
 ```
 
 Please ensure you have Python 3.9+ installed.
