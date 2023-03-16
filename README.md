@@ -27,11 +27,11 @@ Please be aware that you need:
 First, clone the repo:
 
 ```console
-git clone https://github.com/mifurm/azure-open-ai-embeddings-qna
+git clone https://github.com/kubasiak/azure-open-ai-embeddings-qna.git
 cd azure-open-ai-embeddings-qna
 ```
 
-Next, configure your `.env` as described in [Environment variables](#environment-variables):
+Next, configure your `.env` as described in [Environment variables](#environment-variables) and move it to code directory:
 
 
 ```console
