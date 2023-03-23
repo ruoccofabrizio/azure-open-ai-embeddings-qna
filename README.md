@@ -170,4 +170,13 @@ Optional parameters for additional features (e.g. document text extraction with 
 |PAGES_PER_EMBEDDINGS| Number of pages for embeddings creation. Keep in mind you should have less than 3K token for each embedding.| Default: A new embedding is created every 2 pages.|
 |TRANSLATE_ENDPOINT| YOUR_AZURE_TRANSLATE_ENDPOINT| OPTIONAL - Get it in the [Azure Portal](https://portal.azure.com) if you want to use translation feature|
 |TRANSLATE_KEY| YOUR_TRANSLATE_KEY| OPTIONAL - Get it in the [Azure Portal](https://portal.azure.com) if you want to use translation feature|
-|TRANSLATE_REGION| YOUR_TRANSLATE_REGION| OPTIONAL - Get it in the [Azure Portal](https://portal.azure.com) if you want to use translation feature|
+|TRANSLATE_REGION | YOUR_TRANSLATE_REGION| OPTIONAL - Get it in the [Azure Portal](https://portal.azure.com) if you want to use translation feature|
+|VIDEO_ACCOUNT_ID | YOUR_AZURE_VI_ACCOUNT_ID |
+|VIDEO_LOCATION | YOUR_AZURE_VI_LOCATION |
+|VIDEO_ACCOUNT_NAME| YOUR_AZURE_VI_ACCOUNT_ID |
+|RG| YOUR_AZURE_VI_ACCOUNT_RESOURCEGROUP |
+Service principal section (with Contributor access to your VideoIndexer service)
+| CLIENT_ID  |
+|CLIENT_SECRET |
+|TENANT_ID|
+|SUBSCRIPTION_ID |
