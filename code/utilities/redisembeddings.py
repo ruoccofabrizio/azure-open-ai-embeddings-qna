@@ -62,7 +62,7 @@ def get_documents(number_of_results: int=VECT_NUMBER):
 
 def set_document(elem):
     # Connect to the Redis server
-    redis_conn = Redis(host= os.environ.get('REDIS_ADDRESS','localhost'), port=6379, password=os.environ.get('REDIS_PASSWORD',None)) 
+    redis_conn = Redis(host= os.environ.get('REDIS_ADDRESS','localhost'), port= int(os.environ.get('REDIS_PORT','6379')), password=os.environ.get('REDIS_PASSWORD',None)) 
     # Set Data
     hash_object = hashlib.sha1(elem['filename'].encode('utf-8')) if elem['filename'] else hashlib.sha1(elem['text'].encode('utf-8'))
     index = hash_object.hexdigest()
@@ -117,7 +117,7 @@ def delete_prompt_results(prefix="prompt*"):
         redis_conn.delete(*keys)
 
 # Connect to the Redis server
-redis_conn = Redis(host= os.environ.get('REDIS_ADDRESS','localhost'), port=6379, password=os.environ.get('REDIS_PASSWORD',None)) #api for Docker localhost for local execution
+redis_conn = Redis(host= os.environ.get('REDIS_ADDRESS','localhost'), port=int(os.environ.get('REDIS_PORT','6379')), password=os.environ.get('REDIS_PASSWORD',None)) #api for Docker localhost for local execution
 
 # Check if Redis index exists
 index_name = "embeddings-index"

@@ -19,7 +19,7 @@ embedding_model = os.getenv("OPENAI_EMBEDDINGS_ENGINE_DOC")
 question_prompt = os.getenv("QUESTION_PROMPT").replace(r'\n', '\n')
 number_of_embeddings_for_qna = int(os.getenv("NUMBER_OF_EMBEDDINGS_FOR_QNA", 1))
 
-redis_conn = Redis(host=os.getenv('REDIS_ADDRESS'), port=6379, password=os.getenv('REDIS_PASSWORD'))
+redis_conn = Redis(host=os.getenv('REDIS_ADDRESS'), port=int(os.environ.get('REDIS_PORT','6379')), password=os.getenv('REDIS_PASSWORD'))
 index_name = "embeddings-index"
 prompt_index_name = "prompt-index"
 
