@@ -1,8 +1,7 @@
 import streamlit as st
-from urllib.error import URLError
-import pandas as pd
-from utilities import utils
 import os
+import traceback
+from utilities.helper import LLMHelper
 
 def clear_summary():
     st.session_state['summary'] = ""
@@ -13,8 +12,8 @@ def get_custom_prompt():
     return customprompt
 
 def customcompletion():
-    _, response = utils.get_completion(get_custom_prompt(), max_tokens=500, model=os.getenv('OPENAI_ENGINES', 'text-davinci-003'))
-    st.session_state['result'] = response['choices'][0]['text'].encode().decode()
+    response = llm_helper.get_completion(get_custom_prompt())
+    st.session_state['conv_result'] = response.encode().decode()
 
 try:
     # Set page layout to wide screen and menu item
@@ -27,6 +26,8 @@ try:
     '''
     }
     st.set_page_config(layout="wide", menu_items=menu_items)
+
+    llm_helper = LLMHelper()
 
     st.markdown("## Conversation data extraction")
 
@@ -68,15 +69,9 @@ try:
     st.button(label="Execute tasks", on_click=customcompletion)
     # displaying the summary
     result = ""
-    if 'result' in st.session_state:
-        result = st.session_state['result']
+    if 'conv_result' in st.session_state:
+        result = st.session_state['conv_result']
     st.text_area(label="OpenAI result", value=result, height=200)
 
-except URLError as e:
-    st.error(
-        """
-        **This demo requires internet access.**
-        Connection error: %s
-        """
-        % e.reason
-    )
+except Exception as e:
+    st.error(traceback.format_exc())

@@ -1,12 +1,11 @@
 import streamlit as st
-from urllib.error import URLError
-import pandas as pd
-from utilities import utils
+from utilities.helper import LLMHelper
 import os
+import traceback
 
 def summarize():
-    _, response = utils.get_completion(get_prompt(), max_tokens=500, model=os.getenv('OPENAI_ENGINES', 'text-davinci-003'))
-    st.session_state['summary'] = response['choices'][0]['text'].encode().decode()
+    response = llm_helper.get_completion(get_prompt())
+    st.session_state['summary'] = response
 
 def clear_summary():
     st.session_state['summary'] = ""
@@ -36,6 +35,8 @@ try:
     }
     st.set_page_config(layout="wide", menu_items=menu_items)
 
+    llm_helper = LLMHelper()
+
     st.markdown("## Summarization")
     # radio buttons for summary type
     summary_type = st.radio(
@@ -60,11 +61,5 @@ try:
     st.text_area(label="Prompt",value=get_prompt(), height=400)
     st.button(label="Summarize with updated prompt")
 
-except URLError as e:
-    st.error(
-        """
-        **This demo requires internet access.**
-        Connection error: %s
-        """
-        % e.reason
-    )
+except Exception as e:
+    st.error(traceback.format_exc())

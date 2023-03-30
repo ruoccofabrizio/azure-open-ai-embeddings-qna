@@ -1,12 +1,15 @@
 import streamlit as st
-from urllib.error import URLError
-import pandas as pd
-from utilities import utils, redisembeddings
 import os
+import traceback
+from utilities.helper import LLMHelper
 
-def delete_row():
-    st.session_state['data_to_drop'] 
-    redisembeddings.delete_document(st.session_state['data_to_drop'])
+def delete_embedding():
+    llm_helper.vector_store.delete_keys([f"doc:{st.session_state['embedding_to_drop']}"])
+
+def delete_file():
+    embeddings_to_delete = data[data.filename == st.session_state['file_to_drop']].key.tolist()
+    embeddings_to_delete = list(map(lambda x: f"doc:{x}", embeddings_to_delete))
+    llm_helper.vector_store.delete_keys(embeddings_to_delete)
 
 try:
     # Set page layout to wide screen and menu item
@@ -20,31 +23,37 @@ try:
     }
     st.set_page_config(layout="wide", menu_items=menu_items)
 
+    llm_helper = LLMHelper()
+
     # Query RediSearch to get all the embeddings
-    data = redisembeddings.get_documents()
+    data = llm_helper.get_all_documents(k=1000)
 
     if len(data) == 0:
         st.warning("No embeddings found. Go to the 'Add Document' tab to insert your docs.")
     else:
-        data
+        st.dataframe(data, use_container_width=True)
 
-        col1, col2, col3, col4 = st.columns([1,1,2,1])
+        st.download_button("Download data", data.to_csv(index=False).encode('utf-8'), "embeddings.csv", "text/csv", key='download-embeddings')
+
+        st.text("")
+        st.text("")
+        col1, col2, col3, col4 = st.columns([3,2,2,1])
         with col1:
+            st.selectbox("Embedding id to delete", data.get('key',[]), key="embedding_to_drop")
+        with col2:
             st.text("")
             st.text("")
-            st.download_button("Download data", data.to_csv(index=False).encode('utf-8'), "embeddings.csv", "text/csv", key='download-embeddings')
+            st.button("Delete embedding", on_click=delete_embedding)
         with col3:
-            st.selectbox("Embedding id to delete", data.get('id',[]), key="data_to_drop")
+            st.selectbox("File name to delete", set(data.get('filename',[])), key="file_to_drop")
         with col4:
             st.text("")
             st.text("")
-            st.button("Delete row", on_click=delete_row)
+            st.button("Delete file", on_click=delete_file)
 
-except URLError as e:
-    st.error(
-        """
-        **This demo requires internet access.**
-        Connection error: %s
-        """
-        % e.reason
-    )
+        st.text("")
+        st.text("")
+        st.button("Delete all embeddings", on_click=llm_helper.vector_store.delete_keys_pattern, args=("doc*",), type="secondary")
+
+except Exception as e:
+    st.error(traceback.format_exc())

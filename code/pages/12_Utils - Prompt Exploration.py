@@ -1,24 +1,23 @@
 import streamlit as st
-from urllib.error import URLError
-import pandas as pd
-from utilities import utils, redisembeddings
 import os
+import traceback
+from utilities.helper import LLMHelper
 
 def get_prompt():
     return f"{st.session_state['doc_text']}\n{st.session_state['input_prompt']}"
    
 def customcompletion():
-    _, response = utils.get_completion(get_prompt(), max_tokens=1000, model=os.getenv('OPENAI_ENGINES', 'text-davinci-003'))
-    st.session_state['result'] = response['choices'][0]['text'].encode().decode()
+    response = llm_helper.get_completion(get_prompt())
+    st.session_state['prompt_result']= response.encode().decode()
 
 def process_all(data):
-    redisembeddings.delete_prompt_results('prompt*')
-    for doc in data.to_dict('records'):
-        if doc['filename'].partition('_chunk_')[0] in st.session_state['selected_docs']:
-            prompt = f"{doc['text']}\n{st.session_state['input_prompt']}"
-            _, response = utils.get_completion(prompt, max_tokens=1000, model=os.getenv('OPENAI_ENGINES', 'text-davinci-003'))
-            redisembeddings.add_prompt_result(doc['id'], response['choices'][0]['text'].encode().decode(), doc['filename'], st.session_state['input_prompt'])
-    st.session_state['data_processed'] = redisembeddings.get_prompt_results().to_csv(index=False)
+    llm_helper.vector_store.delete_prompt_results('prompt*')
+    data_to_process = data[data.filename.isin(st.session_state['selected_docs'])]
+    for doc in data_to_process.to_dict('records'):
+        prompt = f"{doc['content']}\n{st.session_state['input_prompt']}\n\n"
+        response = llm_helper.get_completion(prompt)
+        llm_helper.vector_store.add_prompt_result(doc['key'], response.encode().decode(), doc['filename'], st.session_state['input_prompt'])
+    st.session_state['data_processed'] = llm_helper.vector_store.get_prompt_results().to_csv(index=False)
 
 try:
     # Set page layout to wide screen and menu item
@@ -35,13 +34,15 @@ try:
     if not 'data_processed' in st.session_state:
         st.session_state['data_processed'] = None
 
+    llm_helper = LLMHelper()
+
     # Query RediSearch to get all the embeddings
-    data = redisembeddings.get_documents()
+    data = llm_helper.get_all_documents(k=1000)
 
     if len(data) == 0:
         st.warning("No embeddings found. Go to the 'Add Document' tab to insert your docs.")
     else:
-        data
+        st.dataframe(data, use_container_width=True)
 
         # displaying a box for a custom prompt
         st.text_area(label="Document", height=400, key="doc_text")
@@ -49,13 +50,13 @@ try:
         st.button(label="Execute tasks", on_click=customcompletion)
         # displaying the summary
         result = ""
-        if 'result' in st.session_state:
-            result = st.session_state['result']
+        if 'prompt_result' in st.session_state:
+            result = st.session_state['prompt_result']
             st.text_area(label="Result", value=result, height=400)
 
         cols = st.columns([1,1,1,2])
         with cols[1]:
-            st.multiselect("Select documents", sorted(list(set(map(lambda x: x.partition('_chunk_')[0], data['filename'].to_list())))), key="selected_docs")
+            st.multiselect("Select documents", sorted(set(data.filename.tolist())), key="selected_docs")
         with cols[2]:
             st.text("-")
             st.button("Execute task on docs", on_click=process_all, args=(data,)) 
@@ -64,12 +65,5 @@ try:
             download_data = st.session_state['data_processed'] if st.session_state['data_processed'] is not None else ""
             st.download_button(label="Download results", data=download_data, file_name="results.csv", mime="text/csv", disabled=st.session_state['data_processed'] is None)
 
-
-except URLError as e:
-    st.error(
-        """
-        **This demo requires internet access.**
-        Connection error: %s
-        """
-        % e.reason
-    )
+except Exception as e:
+    st.error(traceback.format_exc())
