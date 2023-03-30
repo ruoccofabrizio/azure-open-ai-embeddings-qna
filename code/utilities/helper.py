@@ -51,19 +51,20 @@ class LLMHelper:
         self.index_name: str = "embeddings"
         self.model: str = os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', "text-embedding-ada-002")
         self.deployment_name: str = os.getenv("OPENAI_ENGINE", os.getenv("OPENAI_ENGINES", "text-davinci-003"))
-        self.vectore_store_address: str = os.getenv('REDIS_ADDRESS') if os.getenv('REDIS_ADDRESS') else "redis://localhost"
+        self.vector_store_address: str = os.getenv('REDIS_ADDRESS') if os.getenv('REDIS_ADDRESS') else "redis://localhost"
         self.vector_store_port: int= int(os.getenv('REDIS_PORT', 6379))
+        if os.getenv('REDIS_PASSWORD'):
+            self.vector_store_address = f":{os.getenv('REDIS_PASSWORD')}@{self.vector_store_address}"
         # Add protocol (redis://) if the address doesn't start with it
-        if not self.vectore_store_address.startswith("redis://"):
-            self.vectore_store_address = f"redis://{self.vectore_store_address}"
+        if not self.vector_store_address.startswith("redis://") and self.vector_store_address.startswith("rediss://"):
+            self.vector_store_address = f"redis://{self.vector_store_address}" 
         self.chunk_size = int(os.getenv('CHUNK_SIZE', 500))
         self.chunk_overlap = int(os.getenv('CHUNK_OVERLAP', 100))
-
         self.document_loaders: BaseLoader = WebBaseLoader if document_loaders is None else document_loaders
         self.text_splitter: TextSplitter = TokenTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap) if text_splitter is None else text_splitter
         self.embeddings: OpenAIEmbeddings = OpenAIEmbeddings(model=self.model, chunk_size=1) if embeddings is None else embeddings
         self.llm: AzureOpenAI = AzureOpenAI(deployment_name=self.deployment_name) if llm is None else llm
-        self.vector_store: RedisExtended = RedisExtended(redis_url=f"{self.vectore_store_address}:{self.vector_store_port}", index_name=self.index_name, embedding_function=self.embeddings.embed_query) if vector_store is None else vector_store   
+        self.vector_store: RedisExtended = RedisExtended(redis_url=f"{self.vector_store_address}:{self.vector_store_port}", index_name=self.index_name, embedding_function=self.embeddings.embed_query) if vector_store is None else vector_store   
         self.k : int = 3 if k is None else k
 
         self.pdf_parser : AzureFormRecognizerClient = AzureFormRecognizerClient() if pdf_parser is None else pdf_parser
