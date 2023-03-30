@@ -4,6 +4,16 @@ A simple web application for a OpenAI-enabled document search. This repo uses Az
 
 ![Architecture](docs/architecture.png)
 
+# IMPORTANT NOTE (OpenAI generated)
+We have made some changes to the data format in the latest update of this repo. 
+<br>The new format is more efficient and compatible with the latest standards and libraries. However, we understand that some of you may have existing applications that rely on the previous format and may not be able to migrate to the new one immediately.
+
+Therefore, we have provided a way for you to continue using the previous format in a running application. All you need to do is to set your web application tag to fruocco/oai-embeddings:2023-03-27_25. This will ensure that your application will use the data format that was available on March 27, 2023. We strongly recommend that you update your applications to use the new format as soon as possible.
+
+If you want to move to the new format, please go to:
+-   "Add Document" -> "Add documents in Batch" and click on "Convert all files and add embeddings" to reprocess your documents. 
+          
+
 # Running this repo
 You have multiple options to run the code:
 -   [Deploy on Azure (WebApp + Redis Stack + Batch Processing)](#deploy-on-azure-webapp--redis-stack--batch-processing)
@@ -125,7 +135,7 @@ Configure your `.env` as described in as described in [Environment variables](#e
 Then run:
 
 ```console
-docker run -e .env -p 8080:80 fruocco/oai-embeddings:latest
+docker run --env-file .env -p 8080:80 fruocco/oai-embeddings:latest
 ```
 
 ### Option 2 - Build the Docker image yourself
@@ -133,11 +143,13 @@ docker run -e .env -p 8080:80 fruocco/oai-embeddings:latest
 Configure your `.env` as described in as described in [Environment variables](#environment-variables)
 
 ```console
-docker build . -t your_docker_registry/your_docker_image:your_tag
-docker run -e .env -p 8080:80 your_docker_registry/your_docker_image:your_tag
+docker build . -f Dockerfile -t your_docker_registry/your_docker_image:your_tag
+docker run --env-file .env -p 8080:80 your_docker_registry/your_docker_image:your_tag
 ```
 
-
+Note: You can use 
+-   WebApp.Dockerfile to build the Web Application
+-   BatchProcess.Dockerfile to build the Azure Function for Batch Processing
 
 ## Environment variables
 
@@ -145,12 +157,13 @@ Here is the explanation of the parameters:
 
 | App Setting | Value | Note |
 | --- | --- | ------------- |
-|OPENAI_ENGINES|text-davinci-003|Instruction engines deployed in your Azure OpenAI resource|
+|OPENAI_ENGINE|text-davinci-003|Instruction engine deployed in your Azure OpenAI resource|
 |OPENAI_EMBEDDINGS_ENGINE_DOC | text-embedding-ada-002  | Embedding engine for documents deployed in your Azure OpenAI resource|
 |OPENAI_EMBEDDINGS_ENGINE_QUERY | text-embedding-ada-002  | Embedding engine for query deployed in your Azure OpenAI resource|
 |OPENAI_API_BASE | https://YOUR_AZURE_OPENAI_RESOURCE.openai.azure.com/ | Your Azure OpenAI Resource name. Get it in the [Azure Portal](https://portal.azure.com)|
 |OPENAI_API_KEY| YOUR_AZURE_OPENAI_KEY | Your Azure OpenAI API Key. Get it in the [Azure Portal](https://portal.azure.com)|
 |REDIS_ADDRESS| api | URL for Redis Stack: "api" for docker compose|
+|REDIS_PORT | 6379 | Port for Redis |
 |REDIS_PASSWORD| redis-stack-password | OPTIONAL - Password for your Redis Stack|
 |REDIS_ARGS | --requirepass redis-stack-password | OPTIONAL - Password for your Redis Stack|
 |CONVERT_ADD_EMBEDDINGS_URL| http://batch/api/BatchStartProcessing | URL for Batch processing Function: "http://batch/api/BatchStartProcessing" for docker compose |

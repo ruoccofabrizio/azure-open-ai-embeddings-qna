@@ -1,16 +1,8 @@
 import streamlit as st
-import os, json, re, io
-from urllib.error import URLError
-import requests
-from utilities.formrecognizer import analyze_read
-from os import path
-from utilities.azureblobstorage import upload_file, get_all_files
-import zipfile
-
-from utilities import utils, redisembeddings
 import os
+import traceback
+from utilities.helper import LLMHelper
 
-########## START - MAIN ##########
 try:
     # Set page layout to wide screen and menu item
     menu_items = {
@@ -32,23 +24,13 @@ try:
                 """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
+    llm_helper = LLMHelper()
 
     col1, col2, col3 = st.columns([2,1,1])
 
-    files_data = get_all_files()
+    files_data = llm_helper.blob_client.get_all_files()
 
-    st.dataframe(files_data)
+    st.dataframe(files_data, use_container_width=True)
 
-
-
-except URLError as e:
-    st.error(
-        """
-        **This demo requires internet access.**
-
-        Connection error: %s
-        """
-        % e.reason
-    )
-
-########## END - MAIN ##########
+except Exception as e:
+    st.error(traceback.format_exc())
