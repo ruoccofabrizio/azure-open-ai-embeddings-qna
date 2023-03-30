@@ -56,7 +56,7 @@ class LLMHelper:
         if os.getenv('REDIS_PASSWORD'):
             self.vector_store_address = f":{os.getenv('REDIS_PASSWORD')}@{self.vector_store_address}"
         # Add protocol (redis://) if the address doesn't start with it
-        if not self.vector_store_address.startswith("redis://") and self.vector_store_address.startswith("rediss://"):
+        if not self.vector_store_address.startswith("redis://") and not self.vector_store_address.startswith("rediss://"):
             self.vector_store_address = f"redis://{self.vector_store_address}" 
         self.chunk_size = int(os.getenv('CHUNK_SIZE', 500))
         self.chunk_overlap = int(os.getenv('CHUNK_OVERLAP', 100))
