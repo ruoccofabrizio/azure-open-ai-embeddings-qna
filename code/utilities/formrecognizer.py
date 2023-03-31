@@ -9,7 +9,7 @@ class AzureFormRecognizerClient:
         load_dotenv()
 
         self.pages_per_embeddings = int(os.getenv('PAGES_PER_EMBEDDINGS', 2))
-        self.section_to_exclude = ['title', 'sectionHeading', 'footnote', 'pageHeader', 'pageFooter', 'pageNumber']
+        self.section_to_exclude = ['footnote', 'pageHeader', 'pageFooter', 'pageNumber']
 
         self.form_recognizer_endpoint : str = form_recognizer_endpoint if form_recognizer_endpoint else os.getenv('FORM_RECOGNIZER_ENDPOINT')
         self.form_recognizer_key : str = form_recognizer_key if form_recognizer_key else os.getenv('FORM_RECOGNIZER_KEY')
