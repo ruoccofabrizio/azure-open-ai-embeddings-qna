@@ -18,9 +18,15 @@ def remote_convert_files_and_add_embeddings(process_all=False):
     url = os.getenv('CONVERT_ADD_EMBEDDINGS_URL')
     if process_all:
         url = f"{url}?process_all=true"
-    response = requests.post(url)
-    if response.status_code == 200:
-        st.success(f"{response.text}\nPlease note this is an asynchronous process and may take a few minutes to complete.")
+    try:
+        response = requests.post(url)
+        if response.status_code == 200:
+            st.success(f"{response.text}\nPlease note this is an asynchronous process and may take a few minutes to complete.")
+        else:
+            st.error(f"Error: {response.text}")
+    except Exception as e:
+        st.error(traceback.format_exc())
+
 
 def delete_row():
     st.session_state['data_to_drop'] 
