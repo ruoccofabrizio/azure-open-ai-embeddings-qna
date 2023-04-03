@@ -62,6 +62,8 @@ This will spin up three Docker containers:
 -   Redis Stack for storing the embeddings
 -   Batch Processing Azure Function
 
+NOTE: Please note that the Batch Processing Azure Function uses an Azure Storage Account for queuing the documents to process. Please create a Queue named "doc-processing" in the account used for the "AzureWebJobsStorage" env setting.
+
 ## Run everything locally in Python with Conda (WebApp only)
 
 This requires Redis running somewhere and expects that you've setup `.env` as described above. In this case, point `REDIS_ADDRESS` to your Redis deployment. 
