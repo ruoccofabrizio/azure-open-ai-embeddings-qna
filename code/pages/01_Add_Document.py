@@ -32,6 +32,12 @@ def delete_row():
     st.session_state['data_to_drop'] 
     redisembeddings.delete_document(st.session_state['data_to_drop'])
 
+def add_urls():
+    urls = st.session_state['urls'].split('\n')
+    for url in urls:
+        if url:
+            llm_helper.add_embeddings_lc(url)
+            st.success(f"Embeddings added successfully for {url}")
 
 try:
     # Set page layout to wide screen and menu item
@@ -78,7 +84,7 @@ try:
     with st.expander("Add text to the knowledge base", expanded=False):
         col1, col2 = st.columns([3,1])
         with col1: 
-            st.session_state['doc_text'] = st.text_area("Add a new text content and the click on 'Compute Embeddings'", height=600)
+            st.session_state['doc_text'] = st.text_area("Add a new text content and them click on 'Compute Embeddings'", height=600)
 
         with col2:
             st.session_state['embeddings_model'] = st.selectbox('Embeddings models', [llm_helper.get_embeddings_model()['doc']], disabled=True)
@@ -105,6 +111,15 @@ try:
             st.button("Convert new files and add embeddings", on_click=remote_convert_files_and_add_embeddings)
         with col3:
             st.button("Convert all files and add embeddings", on_click=remote_convert_files_and_add_embeddings, args=(True,))
+
+    with st.expander("Add URLs to the knowledge base", expanded=True):
+        col1, col2 = st.columns([3,1])
+        with col1: 
+            st.session_state['urls'] = st.text_area("Add a URLs and than click on 'Compute Embeddings'", placeholder="PLACE YOUR URLS HERE SEPARATED BY A NEW LINE", height=100)
+
+        with col2:
+            st.selectbox('Embeddings models', [llm_helper.get_embeddings_model()['doc']], disabled=True, key="embeddings_model_url")
+            st.button("Compute Embeddings", on_click=add_urls, key="add_url")
 
     with st.expander("View documents in the knowledge base", expanded=False):
         # Query RediSearch to get all the embeddings

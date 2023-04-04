@@ -9,6 +9,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms import AzureOpenAI
 from langchain.vectorstores.base import VectorStore
 from langchain.chains import ChatVectorDBChain
+from langchain.chains import ConversationalRetrievalChain
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT
@@ -26,6 +27,8 @@ from utilities.redis import RedisExtended
 
 import pandas as pd
 import urllib
+
+from fake_useragent import UserAgent
 
 class LLMHelper:
     def __init__(self,
@@ -78,6 +81,9 @@ class LLMHelper:
         self.enable_translation : bool = False if enable_translation is None else enable_translation
         self.translator : AzureTranslatorClient = AzureTranslatorClient() if translator is None else translator
 
+        self.user_agent: UserAgent() = UserAgent()
+        self.user_agent.random
+
     def add_embeddings_lc(self, source_url):
         try:
             documents = self.document_loaders(source_url).load()
@@ -124,14 +130,14 @@ class LLMHelper:
                 }, result)))
 
     def get_semantic_answer_lang_chain(self, question, chat_history):
-        question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
-        doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=False, prompt=PROMPT)
-        chain = ChatVectorDBChain(
-            vectorstore=self.vector_store,
+        question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=True)
+        doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=True, prompt=PROMPT)
+        chain = ConversationalRetrievalChain(
+            retriever=self.vector_store.as_retriever(),
             question_generator=question_generator,
             combine_docs_chain=doc_chain,
             return_source_documents=True,
-            top_k_docs_for_context= self.k
+            # top_k_docs_for_context= self.k
         )
         result = chain({"question": question, "chat_history": chat_history})
         context = "\n".join(list(map(lambda x: x.page_content, result['source_documents'])))
