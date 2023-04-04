@@ -2,9 +2,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import streamlit as st
+import streamlit.components.v1 as components
 import os
 import traceback
 from utilities.helper import LLMHelper
+
+import requests
 
 import logging
 logger = logging.getLogger('azure.core.pipeline.policies.http_logging_policy').setLevel(logging.WARNING)
@@ -81,6 +84,8 @@ try:
         st.session_state['response'] = default_answer
     if 'context' not in st.session_state:
         st.session_state['context'] = ""
+    if 'sources' not in st.session_state:
+        st.session_state['sources'] = ""
 
     # Set page layout to wide screen and menu item
     menu_items = {
@@ -116,16 +121,98 @@ try:
             # st.temperature = st.slider("Temperature", 0.0, 1.0, 0.1)
             st.selectbox("Language", [None] + list(available_languages.keys()), key='translation_language')
 
-    question = st.text_input("OpenAI Semantic Answer", default_question)
+    if 'askedquestion' not in st.session_state:
+        st.session_state.askedquestion = ''
 
-    if question != '':
-        st.session_state['question'] = question
-        st.session_state['question'], st.session_state['response'], st.session_state['context'], sources = llm_helper.get_semantic_answer_lang_chain(question, [])
+    def questionAsked():
+        st.session_state.askedquestion = st.session_state.inputquestion
+
+    question = st.text_input("OpenAI Semantic Answer", default_question, key='inputquestion', on_change=questionAsked)
+
+    def display_iframe(filename, link, contextList):
+        if st.session_state['context_show_option'] == 'context within full source document':
+            try:
+                response = requests.get(link)
+                text = response.text
+                for i, context in enumerate(contextList):
+                    contextSpan = f" <span id='ContextTag{i}' style='background-color: yellow'><b>{context}</b></span>"
+                    text = text.replace(context, contextSpan)
+                text = text.replace('\n', '<br><br>')
+
+            except Exception as e:
+                text = "Could not load the document source content"
+        else:
+            text = ""
+            for context in contextList:
+                text = text + context.replace('\n', '<br><br>') + '<br>'
+
+        html_content = """
+        <!DOCTYPE html>
+        <head>
+        <script>
+            window.onload = function() {{
+            setTimeout(function() {{
+                // Code to execute after 0.5 seconds
+                var iframe = this.document.getElementById('{filename}');
+                var element = iframe.contentDocument.getElementById('ContextTag0');
+                if (element !== null) {{
+                    element.scrollIntoView({{
+                    behavior: 'smooth',
+                    }});
+                }}
+            }}, 500);
+            }};
+        </script>
+        </head>
+        <body>
+            <div>
+            <iframe id="{filename}" srcdoc="{text}" width="100%" height="480px"></iframe>
+            </div>
+        </body>
+        """
+
+        if st.button("Close"):
+            st.placeholder.empty()
+
+        placeholder = st.empty()
+        with placeholder:
+            # htmlcontent = html_content.format(link=link, filename=filename)
+            htmlcontent = html_content.format(filename=filename, text=text)
+            components.html(htmlcontent, height=500)
+        pass
+
+
+    if 'context_show_option' not in st.session_state:
+        st.session_state['context_show_option'] = 'context within full source document'
+
+    # Answer the question if any
+    if st.session_state.askedquestion != '':
+        st.session_state['question'] = st.session_state.askedquestion
+        st.session_state.askedquestion = ""
+        st.session_state['question'], st.session_state['response'], st.session_state['context'], st.session_state['sources'] = llm_helper.get_semantic_answer_lang_chain(st.session_state['question'], [])
+
+    # Display the sources and context - even if the page is reloaded
+    if st.session_state['sources'] or st.session_state['context']:
         st.markdown("Answer:" + st.session_state['response'])
-        st.markdown(f'\n\nSources: {sources}') 
+        # st.markdown(f'\n\nSources: {sources}')
+        split_sources = st.session_state['sources'].split('  \n ')
+        for src in split_sources:
+            if src != '':
+                link = src[1:].split('(')[1][:-1].split(')')[0]
+                filename = src[1:].split(']')[0]
+                if st.button(filename, key=filename):
+                    context = st.session_state['context']
+                    display_iframe(filename, link, st.session_state['context'][src])
         with st.expander("Question and Answer Context"):
-            st.markdown(st.session_state['context'].replace('$', '\$'))
-            st.markdown(f"SOURCES: {sources}") 
+            if not st.session_state['context'] is None and st.session_state['context'] != []:
+                for content_source in st.session_state['context'].keys():
+                    st.markdown(f"#### {content_source}")
+                    for context_text in st.session_state['context'][content_source]:
+                        st.markdown(f"{context_text}")
+            
+            # theContext = llm_helper.filter_sourcesLinks(st.session_state['context'].replace('$', '\$'))
+            # st.markdown(theContext)
+            st.markdown(f"SOURCES: {st.session_state['sources']}") 
 
     if st.session_state['translation_language'] and st.session_state['translation_language'] != '':
         st.write(f"Translation to other languages, 翻译成其他语言, النص باللغة العربية")
