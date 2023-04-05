@@ -88,6 +88,12 @@ class LLMHelper:
         try:
             documents = self.document_loaders(source_url).load()
             docs = self.text_splitter.split_documents(documents)
+            
+            #remove hidden characters from begin and end (langchain TokenTextSplitter may split a non-ascii character in half)
+            pattern = re.compile(r'[\x00-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')
+            for(doc) in docs:
+                doc.page_content = re.sub(pattern, '', doc.page_content)
+            
             keys = []
             for i, doc in enumerate(docs):
                 # Create a unique key for the document

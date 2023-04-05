@@ -4,13 +4,30 @@ from os import path
 import requests
 import mimetypes
 import traceback
+import chardet
 from utilities.helper import LLMHelper
 import uuid
 from redis.exceptions import ResponseError 
 
+def get_content_type_with_encoding(content_type, bytes_data):
+    # Add encoding to content_type to avoid requests module to set incorrect encoding of ISO-8859-1 for text (text/plain) and html (text/html) files
+    if "text" in content_type:
+        try:
+            encoding = chardet.detect(bytes_data)['encoding']
+            if(encoding.lower().startswith('utf-8')):
+                return f"{content_type}; charset=utf-8"
+            if(encoding.lower().startswith('utf-16')):
+                return f"{content_type}; charset=utf-16"
+            
+            return f"{content_type}; charset={encoding}"
+        except Exception as e:
+            return content_type
+    else:
+        return content_type
+    
 def upload_text_and_embeddings():
     file_name = f"{uuid.uuid4()}.txt"
-    source_url = llm_helper.blob_client.upload_file(st.session_state['doc_text'], file_name=file_name, content_type='text/plain')
+    source_url = llm_helper.blob_client.upload_file(st.session_state['doc_text'], file_name=file_name, content_type='text/plain; charset=utf-8')
     llm_helper.add_embeddings_lc(source_url) 
     st.success("Embeddings added successfully.")
 
@@ -27,7 +44,6 @@ def remote_convert_files_and_add_embeddings(process_all=False):
     except Exception as e:
         st.error(traceback.format_exc())
 
-
 def delete_row():
     st.session_state['data_to_drop'] 
     redisembeddings.delete_document(st.session_state['data_to_drop'])
@@ -38,6 +54,9 @@ def add_urls():
         if url:
             llm_helper.add_embeddings_lc(url)
             st.success(f"Embeddings added successfully for {url}")
+
+
+
 
 try:
     # Set page layout to wide screen and menu item
@@ -64,7 +83,8 @@ try:
             if st.session_state.get('filename', '') != uploaded_file.name:
                 # Upload a new file
                 st.session_state['filename'] = uploaded_file.name
-                content_type = mimetypes.MimeTypes().guess_type(uploaded_file.name)[0]
+                content_type = get_content_type_with_encoding(mimetypes.MimeTypes().guess_type(uploaded_file.name)[0], bytes_data)
+                    
                 st.session_state['file_url'] = llm_helper.blob_client.upload_file(bytes_data, st.session_state['filename'], content_type=content_type)
 
                 converted_filename = ''
@@ -100,7 +120,9 @@ try:
                 if st.session_state.get('filename', '') != up.name:
                     # Upload a new file
                     st.session_state['filename'] = up.name
-                    content_type = mimetypes.MimeTypes().guess_type(up.name)[0]
+                    
+                    content_type = get_content_type_with_encoding(mimetypes.MimeTypes().guess_type(up.name)[0], bytes_data)
+                    
                     st.session_state['file_url'] = llm_helper.blob_client.upload_file(bytes_data, st.session_state['filename'], content_type=content_type)
                     if up.name.endswith('.txt'):
                         # Add the text to the embeddings
