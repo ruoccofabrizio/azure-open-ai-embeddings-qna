@@ -10,7 +10,7 @@ import uuid
 from redis.exceptions import ResponseError 
 
 def get_content_type_with_encoding(content_type, bytes_data):
-    # Add encoding to content_type to avoid requests module to set incorrect encoding of ISO-8859-1 for text (text/plain) and html (text/html) files
+    # Add text encoding to Azure blob content_type property for avoiding requests module setting incorrect ISO-8859-1 encoding for text (text/plain) and html (text/html) files
     if "text" in content_type:
         try:
             encoding = chardet.detect(bytes_data)['encoding']
@@ -20,10 +20,10 @@ def get_content_type_with_encoding(content_type, bytes_data):
                 return f"{content_type}; charset=utf-16"
             
             return f"{content_type}; charset={encoding}"
-        except Exception as e:
-            return content_type
-    else:
-        return content_type
+        except Exception:
+            pass
+
+    return content_type
     
 def upload_text_and_embeddings():
     file_name = f"{uuid.uuid4()}.txt"
@@ -84,9 +84,7 @@ try:
                 # Upload a new file
                 st.session_state['filename'] = uploaded_file.name
                 content_type = get_content_type_with_encoding(mimetypes.MimeTypes().guess_type(uploaded_file.name)[0], bytes_data)
-                    
                 st.session_state['file_url'] = llm_helper.blob_client.upload_file(bytes_data, st.session_state['filename'], content_type=content_type)
-
                 converted_filename = ''
                 if uploaded_file.name.endswith('.txt'):
                     # Add the text to the embeddings
@@ -120,9 +118,7 @@ try:
                 if st.session_state.get('filename', '') != up.name:
                     # Upload a new file
                     st.session_state['filename'] = up.name
-                    
                     content_type = get_content_type_with_encoding(mimetypes.MimeTypes().guess_type(up.name)[0], bytes_data)
-                    
                     st.session_state['file_url'] = llm_helper.blob_client.upload_file(bytes_data, st.session_state['filename'], content_type=content_type)
                     if up.name.endswith('.txt'):
                         # Add the text to the embeddings
