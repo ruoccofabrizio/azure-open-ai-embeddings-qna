@@ -104,18 +104,17 @@ if st.session_state['chat_history']:
         # message(st.session_state['chat_history'][i][1], key=str(i))
 
         if i == history_range.start:
+            answer_with_citations, sourceList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['chat_history'][i][1], st.session_state['source_documents'][i])
+            st.session_state['chat_history'][i] = st.session_state['chat_history'][i][:1] + (answer_with_citations,)
+            answer_with_citations = re.sub(r'\$\^\{(\d+)\}\$', r'(\1)', st.session_state['chat_history'][i][1]) # message() does not get Latex nor html
+            message(answer_with_citations, key=str(i))
 
             st.session_state['context_show_option'] = st.selectbox(
                 'Choose how to display context used to answer the question when clicking on a document source below:',
                 context_show_options,
                 index=context_show_options.index(st.session_state['context_show_option'])
             )
-
-            answer_with_citations, sourceList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['chat_history'][i][1], st.session_state['source_documents'][i])
-            st.session_state['chat_history'][i] = st.session_state['chat_history'][i][:1] + (answer_with_citations,)
-            answer_with_citations = re.sub(r'\$\^\{(\d+)\}\$', r'(\1)', st.session_state['chat_history'][i][1]) # message() does not get Latex nor html
-            message(answer_with_citations, key=str(i))
-
+            
             for id in range(len(sourceList)):
                 if st.button(f'({id+1}) {filenameList[id]}', key=filenameList[id]):
                     display_iframe(filenameList[id], linkList[id], st.session_state['chat_context'][i][sourceList[id]])
