@@ -193,16 +193,13 @@ try:
 
     # Display the sources and context - even if the page is reloaded
     if st.session_state['sources'] or st.session_state['context']:
+        st.session_state['response'], sourceList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['response'], st.session_state['sources'])
         st.markdown("Answer:" + st.session_state['response'])
-        # st.markdown(f'\n\nSources: {sources}')
-        split_sources = st.session_state['sources'].split('  \n ')
-        for src in split_sources:
-            if src != '':
-                link = src[1:].split('(')[1][:-1].split(')')[0]
-                filename = src[1:].split(']')[0]
-                if st.button(filename, key=filename):
-                    context = st.session_state['context']
-                    display_iframe(filename, link, st.session_state['context'][src])
+ 
+        for id in range(len(sourceList)):
+            if st.button(f'({id+1}) {filenameList[id]}', key=filenameList[id]):
+                display_iframe(filenameList[id], linkList[id], st.session_state['context'][sourceList[id]])
+
         with st.expander("Question and Answer Context"):
             if not st.session_state['context'] is None and st.session_state['context'] != []:
                 for content_source in st.session_state['context'].keys():

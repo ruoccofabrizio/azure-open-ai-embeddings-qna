@@ -138,6 +138,19 @@ class LLMHelper:
 
         return sources
 
+    def insert_citations_in_answer(self, answer, filenameList):
+        pattern = r'\[\[(.*?)\]\]'
+        match = re.search(pattern, answer)
+        while match:
+            filename = match.group(1).split('.')[0] # remove any extension to the name of the source document
+            if filename in filenameList:
+                filenameIndex = filenameList.index(filename) + 1
+                answer = answer[:match.start()] + '$^{' + f'{filenameIndex}' + '}$' + answer[match.end():]
+            else:
+                answer = answer[:match.start()] + '$^{' + f'{filename}' + '}$' + answer[match.end():]
+            match = re.search(pattern, answer)
+        return answer
+
     def get_semantic_answer_lang_chain(self, question, chat_history):
         question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
         doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=False, prompt=PROMPT)
@@ -150,9 +163,6 @@ class LLMHelper:
         )
         result = chain({"question": question, "chat_history": chat_history})
         container_sas = self.blob_client.get_container_sas()
-        
-        # context = "\n".join(list(map(lambda x: x.page_content, result['source_documents'])))
-        # context = "\n".join(list(map(lambda x: "{}  \n {}  \n".format(x.metadata['source'].replace('_SAS_TOKEN_PLACEHOLDER_', container_sas), x.page_content), result['source_documents'])))
         
         contextDict ={}
         for res in result['source_documents']:
@@ -180,3 +190,18 @@ class LLMHelper:
 
     def get_completion(self, prompt, **kwargs):
         return self.llm(prompt)
+    
+    def get_links_filenames(self, answer, sources):
+        split_sources = sources.split('  \n ') # soures are expected to be of format '  \n  [filename1.ext](sourcelink1)  \n [filename2.ext](sourcelink2)  \n  [filename3.ext](sourcelink3)  \n '
+        srcList = []
+        linkList = []
+        filenameList = []
+        for src in split_sources:
+            if src != '':
+                srcList.append(src)
+                link = src[1:].split('(')[1][:-1].split(')')[0] # get the link
+                linkList.append(link)
+                filename = src[1:].split(']')[0] # retrieve the source filename
+                filenameList.append(filename)
+        answer = self.insert_citations_in_answer(answer, filenameList) # Add (1), (2), (3) to the answer to indicate the source of the answer
+        return answer, srcList, linkList, filenameList

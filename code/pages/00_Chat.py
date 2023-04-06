@@ -3,6 +3,7 @@ from streamlit_chat import message
 import streamlit.components.v1 as components
 from utilities.helper import LLMHelper
 import requests
+import regex as re
 
 def clear_chat_data():
     st.session_state['input'] = ""
@@ -83,7 +84,6 @@ def display_iframe(filename, link, contextList):
 
     placeholder = st.empty()
     with placeholder:
-        # htmlcontent = html_content.format(link=link, filename=filename)
         htmlcontent = html_content.format(filename=filename, text=text)
         components.html(htmlcontent, height=500)
     pass
@@ -101,7 +101,8 @@ if st.session_state.askedquestion:
 if st.session_state['chat_history']:
     history_range = range(len(st.session_state['chat_history'])-1, -1, -1)
     for i in range(len(st.session_state['chat_history'])-1, -1, -1):
-        message(st.session_state['chat_history'][i][1], key=str(i))
+        # message(st.session_state['chat_history'][i][1], key=str(i))
+
         if i == history_range.start:
 
             st.session_state['context_show_option'] = st.selectbox(
@@ -110,13 +111,15 @@ if st.session_state['chat_history']:
                 index=context_show_options.index(st.session_state['context_show_option'])
             )
 
-            split_sources = st.session_state['source_documents'][i].split('  \n ')
-            for src in split_sources:
-                if src != '':
-                    link = src[1:].split('(')[1][:-1].split(')')[0]
-                    filename = src[1:].split(']')[0]
-                    if st.button(filename, key=filename):
-                        display_iframe(filename, link, st.session_state['chat_context'][i][src])
+            answer_with_citations, sourceList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['chat_history'][i][1], st.session_state['source_documents'][i])
+            st.session_state['chat_history'][i] = st.session_state['chat_history'][i][:1] + (answer_with_citations,)
+            answer_with_citations = re.sub(r'\$\^\{(\d+)\}\$', r'(\1)', st.session_state['chat_history'][i][1]) # message() does not get Latex nor html
+            message(answer_with_citations, key=str(i))
+
+            for id in range(len(sourceList)):
+                if st.button(f'({id+1}) {filenameList[id]}', key=filenameList[id]):
+                    display_iframe(filenameList[id], linkList[id], st.session_state['chat_context'][i][sourceList[id]])
+
         else:
             st.markdown(f'\n\nSources: {st.session_state["source_documents"][i]}')
         message(st.session_state['chat_history'][i][0], is_user=True, key=str(i) + '_user')
