@@ -138,6 +138,26 @@ class LLMHelper:
 
         return sources
 
+    def extract_followupquestions(self, answer):
+        followupTag = answer.find('Follow-up Questions')
+        folloupQuestions = answer.find('<<')
+
+        # take min of followupTag and folloupQuestions if not -1 to avoid taking the followup questions if there is no followupTag
+        followupTag = min(followupTag, folloupQuestions) if followupTag != -1 and folloupQuestions != -1 else max(followupTag, folloupQuestions)
+        answer_without_followupquestions = answer[:followupTag] if followupTag != -1 else answer
+        followup_questions = answer[followupTag:].strip() if followupTag != -1 else ''
+
+        # Extract the followup questions as a list
+        pattern = r'\<\<(.*?)\>\>'
+        match = re.search(pattern, followup_questions)
+        followup_questions_list = []
+        while match:
+            followup_questions_list.append(followup_questions[match.start()+2:match.end()-2])
+            followup_questions = followup_questions[match.end():]
+            match = re.search(pattern, followup_questions)
+
+        return answer_without_followupquestions, followup_questions_list
+
     def insert_citations_in_answer(self, answer, filenameList):
         pattern = r'\[\[(.*?)\]\]'
         match = re.search(pattern, answer)
@@ -172,7 +192,7 @@ class LLMHelper:
             contextDict[source_key].append(res.page_content)
  
         sources = "\n".join(set(map(lambda x: x.metadata["source"], result['source_documents'])))
-        
+
         result['answer'] = result['answer'].split('SOURCES:')[0].split('Sources:')[0].split('SOURCE:')[0].split('Source:')[0]
         sources = sources.replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)
 
