@@ -87,7 +87,22 @@ class LLMHelper:
     def add_embeddings_lc(self, source_url):
         try:
             documents = self.document_loaders(source_url).load()
+            
+            # Convert to UTF-8 encoding for non-ascii text
+            for(document) in documents:
+                try:
+                    if document.page_content.encode("iso-8859-1") == document.page_content.encode("latin-1"):
+                        document.page_content = document.page_content.encode("iso-8859-1").decode("utf-8", errors="ignore")
+                except:
+                    pass
+                
             docs = self.text_splitter.split_documents(documents)
+            
+            # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
+            pattern = re.compile(r'[\x00-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')
+            for(doc) in docs:
+                doc.page_content = re.sub(pattern, '', doc.page_content)
+            
             keys = []
             for i, doc in enumerate(docs):
                 # Create a unique key for the document
@@ -109,7 +124,7 @@ class LLMHelper:
 
         # Upload the text to Azure Blob Storage
         converted_filename = f"converted/{filename}.txt"
-        source_url = self.blob_client.upload_file("\n".join(text), f"converted/{filename}.txt", content_type='text/plain')
+        source_url = self.blob_client.upload_file("\n".join(text), f"converted/{filename}.txt", content_type='text/plain; charset=utf-8')
 
         print(f"Converted file uploaded to {source_url} with filename {filename}")
         # Update the metadata to indicate that the file has been converted
