@@ -45,16 +45,16 @@ if 'tab_context' not in st.session_state:
 else:
     if st.session_state['chat_question'] != '' and st.session_state['tab_context'] != 'Not opened yet' and st.session_state['tab_context'] != 'Open_Queries':
         st.session_state['tab_context'] = 'Chat'
-tmp=st.session_state['tab_context']
-tmp2=st.session_state['chat_question']
 
 llm_helper = LLMHelper()
 
 
 def ChangeButtonStyle(wgt_txt, wch_hex_colour = '#000000', wch_border_style = ''):
     htmlstr = """<script>var elements = window.parent.document.querySelectorAll('*'), i;
-                for (i = 0; i < elements.length; ++i) 
-                    {{ if (elements[i].innerText == '{wgt_txt}') 
+                    str_wgt_txt = '{wgt_txt}'
+                    str_wgt_txt = str_wgt_txt.replace("/(^|[^\\])'/g", "$1\\'");
+                    for (i = 0; i < elements.length; ++i)
+                    {{ if (elements[i].innerText == str_wgt_txt) 
                         {{
                             elements[i].style.color  = '{wch_hex_colour}';
                             let border_style = '{wch_border_style}';
@@ -78,7 +78,9 @@ def display_iframe(filename, link, contextList):
         try:
             response = requests.get(link)
             text = response.text
+            text = llm_helper.clean_encoding(text)
             for i, context in enumerate(contextList):
+                context = llm_helper.clean_encoding(context)
                 contextSpan = f" <span id='ContextTag{i}' style='background-color: yellow'><b>{context}</b></span>"
                 text = text.replace(context, contextSpan)
             text = text.replace('\n', '<br><br>')
@@ -134,8 +136,6 @@ def ask_followup_question(followup_question):
     st.session_state.chat_askedquestion = followup_question
     st.session_state['input_message_key'] = st.session_state['input_message_key'] + 1
 
-tmp=st.session_state['tab_context']
-tmp2=st.session_state['chat_question']
 # Reset the right asked question to the input box when this page is reopened after switching to the OpenAI_Queries page
 if st.session_state['tab_context'] != 'Chat' and st.session_state['chat_question'] != '' and st.session_state['chat_question'] != st.session_state['chat_askedquestion']:
     st.session_state['tab_context'] = 'Chat'
@@ -158,6 +158,8 @@ if st.session_state.chat_askedquestion and st.session_state.do_not_process_quest
     st.session_state['chat_question'] = st.session_state.chat_askedquestion
     st.session_state.chat_askedquestion = ""
     st.session_state['chat_question'], result, context, sources = llm_helper.get_semantic_answer_lang_chain(st.session_state['chat_question'], st.session_state['chat_history'])
+    result = llm_helper.clean_encoding(result)
+    context = llm_helper.clean_encoding(context)
     result, chat_followup_questions_list = llm_helper.extract_followupquestions(result)
     st.session_state['chat_history'].append((st.session_state['chat_question'], result))
     st.session_state['chat_source_documents'].append(sources)
@@ -173,7 +175,7 @@ if st.session_state['chat_history']:
 
         # This history entry is the latest one - also show follow-up questions, buttons to access source(s) context(s) 
         if i == history_range.start:
-            answer_with_citations, sourceList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['chat_history'][i][1], st.session_state['chat_source_documents'][i])
+            answer_with_citations, sourceList, matchedSourcesList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['chat_history'][i][1], st.session_state['chat_source_documents'][i])
             st.session_state['chat_history'][i] = st.session_state['chat_history'][i][:1] + (answer_with_citations,)
 
             answer_with_citations = re.sub(r'\$\^\{(.*?)\}\$', r'(\1)', st.session_state['chat_history'][i][1]) # message() does not get Latex nor html
@@ -196,11 +198,20 @@ if st.session_state['chat_history']:
             with st.container():
                 for questionId, followup_question in enumerate(st.session_state['chat_followup_questions']):
                     if followup_question:
-                        st.button(followup_question, key=1000+questionId, on_click=ask_followup_question, args=(followup_question, ))
+                        str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
+                        st.button(str_followup_question, key=1000+questionId, on_click=ask_followup_question, args=(followup_question, ))
 
                 for questionId, followup_question in enumerate(st.session_state['chat_followup_questions']):
                     if followup_question:
-                        ChangeButtonStyle(followup_question, "#5555FF", wch_border_style='none')
+                        str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
+                        ChangeButtonStyle(str_followup_question, "#5555FF", wch_border_style='none')
+
+            # Source Buttons Styles
+            for id in range(len(sourceList)):
+                if filenameList[id] in matchedSourcesList:
+                    ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#228822", wch_border_style='none')
+                else:
+                    ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#884422", wch_border_style='none')
 
         # The old questions and answers within the history
         else:

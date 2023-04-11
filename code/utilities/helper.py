@@ -158,18 +158,28 @@ class LLMHelper:
 
         return answer_without_followupquestions, followup_questions_list
 
+    # insert citations in the answer - find filenames in the answer maching sources from the filenamelist and replace them with '${(id+1)}'
     def insert_citations_in_answer(self, answer, filenameList):
+        matched_sources = []
         pattern = r'\[\[(.*?)\]\]'
         match = re.search(pattern, answer)
         while match:
             filename = match.group(1).split('.')[0] # remove any extension to the name of the source document
             if filename in filenameList:
+                matched_sources.append(filename)
                 filenameIndex = filenameList.index(filename) + 1
                 answer = answer[:match.start()] + '$^{' + f'{filenameIndex}' + '}$' + answer[match.end():]
             else:
                 answer = answer[:match.start()] + '$^{' + f'{filename}' + '}$' + answer[match.end():]
             match = re.search(pattern, answer)
-        return answer
+
+        # When page is reloaded search for references already added to the answer (e.g. '${(id+1)}')
+        for id, filename in enumerate(filenameList):
+            reference = '$^{' + f'{id+1}' + '}$'
+            if reference in answer and not filename in matched_sources:
+                matched_sources.append(filename)
+
+        return answer, matched_sources
 
     def get_semantic_answer_lang_chain(self, question, chat_history):
         question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
@@ -223,5 +233,14 @@ class LLMHelper:
                 linkList.append(link)
                 filename = src[1:].split(']')[0] # retrieve the source filename
                 filenameList.append(filename)
-        answer = self.insert_citations_in_answer(answer, filenameList) # Add (1), (2), (3) to the answer to indicate the source of the answer
-        return answer, srcList, linkList, filenameList
+        answer, matchedSourcesList = self.insert_citations_in_answer(answer, filenameList) # Add (1), (2), (3) to the answer to indicate the source of the answer
+        return answer, srcList, matchedSourcesList, linkList, filenameList
+
+    def clean_encoding(self, text):
+        encoding = 'ISO-8859-1'
+        try:
+            reencodedtext = text.encode(encoding)
+            reencodedtext = reencodedtext.decode('utf-8')
+        except Exception as e:
+            reencodedtext = text
+        return reencodedtext

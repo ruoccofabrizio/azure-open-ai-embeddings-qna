@@ -8,6 +8,7 @@ import traceback
 from utilities.helper import LLMHelper
 
 import requests
+import regex as re
 
 import logging
 logger = logging.getLogger('azure.core.pipeline.policies.http_logging_policy').setLevel(logging.WARNING)
@@ -68,8 +69,10 @@ def check_deployment():
 
 def ChangeButtonStyle(wgt_txt, wch_hex_colour = '#000000', wch_border_style = ''):
     htmlstr = """<script>var elements = window.parent.document.querySelectorAll('*'), i;
-                for (i = 0; i < elements.length; ++i) 
-                    {{ if (elements[i].innerText == '{wgt_txt}') 
+                    str_wgt_txt = '{wgt_txt}'
+                    str_wgt_txt = str_wgt_txt.replace("/(^|[^\\])'/g", "$1\\'");
+                    for (i = 0; i < elements.length; ++i)
+                    {{ if (elements[i].innerText == str_wgt_txt) 
                         {{
                             elements[i].style.color  = '{wch_hex_colour}';
                             let border_style = '{wch_border_style}';
@@ -117,8 +120,6 @@ try:
     if 'tab_context' not in st.session_state:
         st.session_state['tab_context'] = 'Not opened yet'
     else:
-        tmp=st.session_state['tab_context']
-        tmp2=st.session_state['question']
         if st.session_state['question'] != '' and st.session_state['tab_context'] != 'Not opened yet' and st.session_state['tab_context'] != 'Chat':
             st.session_state['tab_context'] = 'Open_Queries'
 
@@ -175,12 +176,14 @@ try:
     # Display the context(s) associated with a source document used to andwer, with automaic scroll to the yellow highlighted context
     def display_iframe(filename, link, contextList):
         st.session_state['do_not_process_question'] = True
-        st.session_state['chat_askedquestion'] = st.session_state.question
+        st.session_state['askedquestion'] = st.session_state.chat_question
         if st.session_state['context_show_option'] == 'context within full source document':
             try:
                 response = requests.get(link)
                 text = response.text
+                text = llm_helper.clean_encoding(text)
                 for i, context in enumerate(contextList):
+                    context = llm_helper.clean_encoding(context)
                     contextSpan = f" <span id='ContextTag{i}' style='background-color: yellow'><b>{context}</b></span>"
                     text = text.replace(context, contextSpan)
                 text = text.replace('\n', '<br><br>')
@@ -230,8 +233,6 @@ try:
 
         pass
 
-    tmp=st.session_state['tab_context']
-    tmp2=st.session_state['question']
     if st.session_state['tab_context'] != 'Open_Queries' and st.session_state['question'] != '' and st.session_state['question'] != st.session_state['followup_questions']:
         st.session_state['tab_context'] = 'Open_Queries'
         st.session_state['do_not_process_question'] = True
@@ -247,12 +248,16 @@ try:
         st.session_state['sources'] = llm_helper.get_semantic_answer_lang_chain(st.session_state['question'], [])
         st.session_state['response'], followup_questions_list = llm_helper.extract_followupquestions(st.session_state['response'])
         st.session_state['followup_questions'] = followup_questions_list
-        
+        st.session_state['response'] = llm_helper.clean_encoding(st.session_state['response'])
+        st.session_state['context'] = llm_helper.clean_encoding(st.session_state['context'])
+
     st.session_state['do_not_process_question'] = False
+    sourceList = []
+    
 
     # Display the sources and context - even if the page is reloaded
     if st.session_state['sources'] or st.session_state['context']:
-        st.session_state['response'], sourceList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['response'], st.session_state['sources'])
+        st.session_state['response'], sourceList, matchedSourcesList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['response'], st.session_state['sources'])
         st.markdown("**Answer:**" + st.session_state['response'])
  
     if st.session_state['sources'] or st.session_state['context']:
@@ -276,11 +281,20 @@ try:
     with st.container():
         for questionId, followup_question in enumerate(st.session_state['followup_questions']):
             if followup_question:
-                st.button(followup_question, key=1000+questionId, on_click=ask_followup_question, args=(followup_question, ))
+                str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
+                st.button(str_followup_question, key=1000+questionId, on_click=ask_followup_question, args=(followup_question, ))
 
         for questionId, followup_question in enumerate(st.session_state['followup_questions']):
             if followup_question:
-                ChangeButtonStyle(followup_question, "#5555FF", wch_border_style='none')
+                str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
+                ChangeButtonStyle(str_followup_question, "#5555FF", wch_border_style='none')
+
+    # Source Buttons Styles
+    for id in range(len(sourceList)):
+        if filenameList[id] in matchedSourcesList:
+            ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#228822", wch_border_style='none')
+        else:
+            ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#884422", wch_border_style='none')
 
     if st.session_state['translation_language'] and st.session_state['translation_language'] != '':
         st.write(f"Translation to other languages, 翻译成其他语言, النص باللغة العربية")
