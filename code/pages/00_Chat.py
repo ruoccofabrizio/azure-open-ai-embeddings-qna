@@ -15,6 +15,7 @@ def clear_chat_data():
     st.session_state['chat_followup_questions'] = []
     st.session_state['do_not_process_question'] = False
     st.session_state['tab_context'] = 'Not opened yet'
+    answer_with_citations = ""
 
 
 # Initialize chat history
