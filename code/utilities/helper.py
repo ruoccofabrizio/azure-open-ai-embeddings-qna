@@ -18,6 +18,8 @@ from langchain.document_loaders import WebBaseLoader
 from langchain.text_splitter import TokenTextSplitter, TextSplitter
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders import TextLoader
+from langchain.chat_models import ChatOpenAI
+from langchain.schema import AIMessage, HumanMessage, SystemMessage
 
 from utilities.formrecognizer import AzureFormRecognizerClient
 from utilities.azureblobstorage import AzureBlobStorageClient
@@ -46,7 +48,7 @@ class LLMHelper:
         load_dotenv()
         openai.api_type = "azure"
         openai.api_base = os.getenv('OPENAI_API_BASE')
-        openai.api_version = "2022-12-01"
+        openai.api_version = "2023-03-15-preview"
         openai.api_key = os.getenv("OPENAI_API_KEY")
 
         # Azure OpenAI settings
@@ -55,6 +57,7 @@ class LLMHelper:
         self.index_name: str = "embeddings"
         self.model: str = os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', "text-embedding-ada-002")
         self.deployment_name: str = os.getenv("OPENAI_ENGINE", os.getenv("OPENAI_ENGINES", "text-davinci-003"))
+        self.deployment_type: str = os.getenv("OPENAI_DEPLOYMENT_TYPE", "Text")
 
         # Vector store settings
         self.vector_store_address: str = os.getenv('REDIS_ADDRESS', "localhost")
@@ -72,7 +75,10 @@ class LLMHelper:
         self.document_loaders: BaseLoader = WebBaseLoader if document_loaders is None else document_loaders
         self.text_splitter: TextSplitter = TokenTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap) if text_splitter is None else text_splitter
         self.embeddings: OpenAIEmbeddings = OpenAIEmbeddings(model=self.model, chunk_size=1) if embeddings is None else embeddings
-        self.llm: AzureOpenAI = AzureOpenAI(deployment_name=self.deployment_name) if llm is None else llm
+        if self.deployment_type == "Chat":
+            self.llm: ChatOpenAI = ChatOpenAI(model_name=self.deployment_name, engine=self.deployment_name) if llm is None else llm
+        else:
+            self.llm: AzureOpenAI = AzureOpenAI(deployment_name=self.deployment_name) if llm is None else llm
         self.vector_store: RedisExtended = RedisExtended(redis_url=self.vector_store_full_address, index_name=self.index_name, embedding_function=self.embeddings.embed_query) if vector_store is None else vector_store   
         self.k : int = 3 if k is None else k
 
@@ -146,8 +152,8 @@ class LLMHelper:
                 }, result)))
 
     def get_semantic_answer_lang_chain(self, question, chat_history):
-        question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=True)
-        doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=True, prompt=PROMPT)
+        question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
+        doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=False, prompt=PROMPT)
         chain = ConversationalRetrievalChain(
             retriever=self.vector_store.as_retriever(),
             question_generator=question_generator,
@@ -175,4 +181,7 @@ class LLMHelper:
         }
 
     def get_completion(self, prompt, **kwargs):
-        return self.llm(prompt)
+        if self.deployment_type == 'Chat':
+            return self.llm([HumanMessage(content=prompt)]).content
+        else:
+            return self.llm(prompt)
