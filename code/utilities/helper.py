@@ -144,6 +144,54 @@ class LLMHelper:
                 'metadata' : x.metadata,
                 }, result)))
 
+    # remove paths from sources to only keep the filename
+    def filter_sourcesLinks(self, sources):
+        # use regex to replace all occurences of '[anypath/anypath/somefilename.xxx](the_link)' to '[somefilename](thelink)' in sources
+        pattern = r'\[[^\]]*?/([^/\]]*?)\]'
+
+        match = re.search(pattern, sources)
+        while match:
+            withoutExtensions = match.group(1).split('.')[0] # remove any extension to the name of the source document
+            sources = sources[:match.start()] + f'[{withoutExtensions}]' + sources[match.end():]
+            match = re.search(pattern, sources)
+        
+        sources = '  \n ' + sources.replace('\n', '  \n ') # add a carriage return after each source
+
+        return sources
+
+    def extract_followupquestions(self, answer):
+        followupTag = answer.find('Follow-up Questions')
+        folloupQuestions = answer.find('<<')
+
+        # take min of followupTag and folloupQuestions if not -1 to avoid taking the followup questions if there is no followupTag
+        followupTag = min(followupTag, folloupQuestions) if followupTag != -1 and folloupQuestions != -1 else max(followupTag, folloupQuestions)
+        answer_without_followupquestions = answer[:followupTag] if followupTag != -1 else answer
+        followup_questions = answer[followupTag:].strip() if followupTag != -1 else ''
+
+        # Extract the followup questions as a list
+        pattern = r'\<\<(.*?)\>\>'
+        match = re.search(pattern, followup_questions)
+        followup_questions_list = []
+        while match:
+            followup_questions_list.append(followup_questions[match.start()+2:match.end()-2])
+            followup_questions = followup_questions[match.end():]
+            match = re.search(pattern, followup_questions)
+
+        return answer_without_followupquestions, followup_questions_list
+
+    def insert_citations_in_answer(self, answer, filenameList):
+        pattern = r'\[\[(.*?)\]\]'
+        match = re.search(pattern, answer)
+        while match:
+            filename = match.group(1).split('.')[0] # remove any extension to the name of the source document
+            if filename in filenameList:
+                filenameIndex = filenameList.index(filename) + 1
+                answer = answer[:match.start()] + '$^{' + f'{filenameIndex}' + '}$' + answer[match.end():]
+            else:
+                answer = answer[:match.start()] + '$^{' + f'{filename}' + '}$' + answer[match.end():]
+            match = re.search(pattern, answer)
+        return answer
+
     def get_semantic_answer_lang_chain(self, question, chat_history):
         question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=True)
         doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=True, prompt=PROMPT)
@@ -155,15 +203,23 @@ class LLMHelper:
             # top_k_docs_for_context= self.k
         )
         result = chain({"question": question, "chat_history": chat_history})
-        context = "\n".join(list(map(lambda x: x.page_content, result['source_documents'])))
-        sources = "\n".join(set(map(lambda x: x.metadata["source"], result['source_documents'])))
-
         container_sas = self.blob_client.get_container_sas()
         
+        contextDict ={}
+        for res in result['source_documents']:
+            source_key = self.filter_sourcesLinks(res.metadata['source'].replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)).replace('\n', '').replace(' ', '')
+            if source_key not in contextDict:
+                contextDict[source_key] = []
+            contextDict[source_key].append(res.page_content)
+ 
+        sources = "\n".join(set(map(lambda x: x.metadata["source"], result['source_documents'])))
+
         result['answer'] = result['answer'].split('SOURCES:')[0].split('Sources:')[0].split('SOURCE:')[0].split('Source:')[0]
         sources = sources.replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)
 
-        return question, result['answer'], context, sources
+        sources = self.filter_sourcesLinks(sources)
+
+        return question, result['answer'], contextDict, sources
 
     def get_embeddings_model(self):
         OPENAI_EMBEDDINGS_ENGINE_DOC = os.getenv('OPENAI_EMEBDDINGS_ENGINE', os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002'))  
@@ -175,3 +231,18 @@ class LLMHelper:
 
     def get_completion(self, prompt, **kwargs):
         return self.llm(prompt)
+    
+    def get_links_filenames(self, answer, sources):
+        split_sources = sources.split('  \n ') # soures are expected to be of format '  \n  [filename1.ext](sourcelink1)  \n [filename2.ext](sourcelink2)  \n  [filename3.ext](sourcelink3)  \n '
+        srcList = []
+        linkList = []
+        filenameList = []
+        for src in split_sources:
+            if src != '':
+                srcList.append(src)
+                link = src[1:].split('(')[1][:-1].split(')')[0] # get the link
+                linkList.append(link)
+                filename = src[1:].split(']')[0] # retrieve the source filename
+                filenameList.append(filename)
+        answer = self.insert_citations_in_answer(answer, filenameList) # Add (1), (2), (3) to the answer to indicate the source of the answer
+        return answer, srcList, linkList, filenameList
