@@ -109,6 +109,7 @@ class LLMHelper:
                 source_url = source_url.split('?')[0]
                 filename = "/".join(source_url.split('/')[4:])
                 hash_key = hashlib.sha1(f"{source_url}_{i}".encode('utf-8')).hexdigest()
+                hash_key = f"doc:{self.index_name}:{hash_key}"
                 keys.append(hash_key)
                 doc.metadata = {"source": f"[{source_url}]({source_url}_SAS_TOKEN_PLACEHOLDER_)" , "chunk": i, "key": hash_key, "filename": filename}
             self.vector_store.add_documents(documents=docs, redis_url=self.vector_store_full_address,  index_name=self.index_name, keys=keys)

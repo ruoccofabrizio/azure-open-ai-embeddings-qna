@@ -14,7 +14,7 @@ azure-storage-blob==12.14.1
 requests==2.28.2
 tiktoken==0.2.0
 azure-storage-queue==12.5.0
-langchain==0.0.125
+langchain==0.0.136
 beautifulsoup4==4.12.0
 streamlit-chat==0.0.2.2
 fake-useragent==1.1.3
