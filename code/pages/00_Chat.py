@@ -181,6 +181,15 @@ if st.session_state['chat_history']:
             answer_with_citations = re.sub(r'\$\^\{(.*?)\}\$', r'(\1)', st.session_state['chat_history'][i][1]) # message() does not get Latex nor html
             message(answer_with_citations, key=str(i))
 
+            # Display proposed follow-up questions which can be clicked on to ask that question automatically
+            if len(st.session_state['chat_followup_questions']) > 0:
+                st.markdown('**Proposed follow-up questions:**')
+            with st.container():
+                for questionId, followup_question in enumerate(st.session_state['chat_followup_questions']):
+                    if followup_question:
+                        str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
+                        st.button(str_followup_question, key=1000+questionId, on_click=ask_followup_question, args=(followup_question, ))
+
             # Selectbox to choose how to display the context(s) associated with the clicked source document name
             st.session_state['chat_context_show_option'] = st.selectbox(
                 'Choose how to display context used to answer the question when clicking on a document source below:',
@@ -192,26 +201,19 @@ if st.session_state['chat_history']:
             for id in range(len(sourceList)):
                 st.button(f'({id+1}) {filenameList[id]}', key=filenameList[id], on_click=show_document_source, args=(filenameList[id], linkList[id], st.session_state['chat_context'][i][sourceList[id]], ))
 
-            # Display proposed follow-up questions which can be clicked on to ask that question automatically
-            if len(st.session_state['chat_followup_questions']) > 0:
-                st.markdown('**Proposed follow-up questions:**')
-            with st.container():
-                for questionId, followup_question in enumerate(st.session_state['chat_followup_questions']):
-                    if followup_question:
-                        str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
-                        st.button(str_followup_question, key=1000+questionId, on_click=ask_followup_question, args=(followup_question, ))
-
-                for questionId, followup_question in enumerate(st.session_state['chat_followup_questions']):
-                    if followup_question:
-                        str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
-                        ChangeButtonStyle(str_followup_question, "#5555FF", wch_border_style='none')
-
             # Source Buttons Styles
             for id in range(len(sourceList)):
                 if filenameList[id] in matchedSourcesList:
                     ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#228822", wch_border_style='none')
                 else:
                     ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#884422", wch_border_style='none')
+
+
+            for questionId, followup_question in enumerate(st.session_state['chat_followup_questions']):
+                if followup_question:
+                    str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
+                    ChangeButtonStyle(str_followup_question, "#5555FF", wch_border_style='none')
+
 
         # The old questions and answers within the history
         else:

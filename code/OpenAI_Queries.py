@@ -176,7 +176,7 @@ try:
     # Display the context(s) associated with a source document used to andwer, with automaic scroll to the yellow highlighted context
     def display_iframe(filename, link, contextList):
         st.session_state['do_not_process_question'] = True
-        st.session_state['askedquestion'] = st.session_state.chat_question
+        st.session_state['askedquestion'] = st.session_state.question
         if st.session_state['context_show_option'] == 'context within full source document':
             try:
                 response = requests.get(link)
@@ -253,28 +253,13 @@ try:
 
     st.session_state['do_not_process_question'] = False
     sourceList = []
-    
+
 
     # Display the sources and context - even if the page is reloaded
     if st.session_state['sources'] or st.session_state['context']:
         st.session_state['response'], sourceList, matchedSourcesList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['response'], st.session_state['sources'])
         st.markdown("**Answer:**" + st.session_state['response'])
  
-    if st.session_state['sources'] or st.session_state['context']:
-        # Buttons to display the context used to answer
-        for id in range(len(sourceList)):
-            st.button(f'({id+1}) {filenameList[id]}', key=filenameList[id], on_click=show_document_source, args=(filenameList[id], linkList[id], st.session_state['context'][sourceList[id]], ))
-
-        # Details on the question and answer context
-        with st.expander("Question and Answer Context"):
-            if not st.session_state['context'] is None and st.session_state['context'] != []:
-                for content_source in st.session_state['context'].keys():
-                    st.markdown(f"#### {content_source}")
-                    for context_text in st.session_state['context'][content_source]:
-                        st.markdown(f"{context_text}")
-            
-            st.markdown(f"SOURCES: {st.session_state['sources']}") 
-
     # Display proposed follow-up questions which can be clicked on to ask that question automatically
     if len(st.session_state['followup_questions']) > 0:
         st.markdown('**Proposed follow-up questions:**')
@@ -284,10 +269,22 @@ try:
                 str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
                 st.button(str_followup_question, key=1000+questionId, on_click=ask_followup_question, args=(followup_question, ))
 
-        for questionId, followup_question in enumerate(st.session_state['followup_questions']):
-            if followup_question:
-                str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
-                ChangeButtonStyle(str_followup_question, "#5555FF", wch_border_style='none')
+    if st.session_state['sources'] or st.session_state['context']:
+        # Buttons to display the context used to answer
+        st.markdown('**Document sources:**')
+        for id in range(len(sourceList)):
+            st.button(f'({id+1}) {filenameList[id]}', key=filenameList[id], on_click=show_document_source, args=(filenameList[id], linkList[id], st.session_state['context'][sourceList[id]], ))
+
+        # Details on the question and answer context
+        with st.expander("Question and Answer Context"):
+            if not st.session_state['context'] is None and st.session_state['context'] != []:
+                for content_source in st.session_state['context'].keys():
+                    st.markdown(f"#### {content_source}")
+                    for context_text in st.session_state['context'][content_source]:
+                        context_text = llm_helper.clean_encoding(context_text)
+                        st.markdown(f"{context_text}")
+
+            st.markdown(f"SOURCES: {st.session_state['sources']}") 
 
     # Source Buttons Styles
     for id in range(len(sourceList)):
@@ -295,6 +292,11 @@ try:
             ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#228822", wch_border_style='none')
         else:
             ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#884422", wch_border_style='none')
+
+    for questionId, followup_question in enumerate(st.session_state['followup_questions']):
+        if followup_question:
+            str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
+            ChangeButtonStyle(str_followup_question, "#5555FF", wch_border_style='none')
 
     if st.session_state['translation_language'] and st.session_state['translation_language'] != '':
         st.write(f"Translation to other languages, 翻译成其他语言, النص باللغة العربية")
