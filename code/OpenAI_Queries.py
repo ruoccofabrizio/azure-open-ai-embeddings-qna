@@ -291,7 +291,7 @@ try:
         if filenameList[id] in matchedSourcesList:
             ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#228822", wch_border_style='none')
         else:
-            ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#884422", wch_border_style='none')
+            ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#AAAAAA", wch_border_style='none')
 
     for questionId, followup_question in enumerate(st.session_state['followup_questions']):
         if followup_question:

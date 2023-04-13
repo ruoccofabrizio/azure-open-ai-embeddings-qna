@@ -4,6 +4,7 @@ import streamlit.components.v1 as components
 from utilities.helper import LLMHelper
 import requests
 import regex as re
+import os
 
 def clear_chat_data():
     st.session_state['chat_history'] = []
@@ -50,21 +51,52 @@ else:
 llm_helper = LLMHelper()
 
 
-def ChangeButtonStyle(wgt_txt, wch_hex_colour = '#000000', wch_border_style = ''):
+def ChangeButtonStyle(wgt_txt, wch_hex_colour = '#000000', wch_border_style = '', wch_textsize=''):
     htmlstr = """<script>var elements = window.parent.document.querySelectorAll('*'), i;
                     str_wgt_txt = '{wgt_txt}'
                     str_wgt_txt = str_wgt_txt.replace("/(^|[^\\])'/g", "$1\\'");
                     for (i = 0; i < elements.length; ++i)
                     {{ if (elements[i].innerText == str_wgt_txt) 
                         {{
-                            elements[i].style.color  = '{wch_hex_colour}';
-                            let border_style = '{wch_border_style}';
-                            if (border_style.length > 0) {{
-                                elements[i].style.border ='{wch_border_style}';
+                            parentNode = elements[i].parentNode;
+                            element_type = elements[i].nodeName;
+                            parent_type = parentNode.nodeName;
+                            if (element_type == 'DIV' && parent_type == 'DIV') {{
+                                // console.log(elements[i].parentNode.parentNode.nodeName);
+                                elements[i].parentNode.parentNode.style.margin = "0"
+                                elements[i].parentNode.parentNode.style.gap = "0"
                                 }}
-                        }} }}</script>  """
+                            // console.log(str_wgt_txt + ' ( ' + element_type + ' ) : ' + parentNode + ' ( ' + parent_type + ' , ' + parentNode.innerText + ' )');
+                            if (element_type == 'BUTTON') {{
+                                elements[i].style.color  = '{wch_hex_colour}';
+                                let border_style = '{wch_border_style}';
+                                if (border_style.length > 0) {{
+                                    elements[i].style.border ='{wch_border_style}';
+                                    elements[i].style.outline ='{wch_border_style}';
+                                    elements[i].addEventListener('focus', function() {{
+                                        this.style.outline = '{wch_border_style}';
+                                        this.style.boxShadow = '0px 0px 0px #FFFFFF';
+                                        this.style.backgroundColor = "#FFFFFF";
+                                        // console.log(this.innerText + ' FOCUS');
+                                        }});
+                                    elements[i].addEventListener('hover', function() {{
+                                        this.style.outline = '{wch_border_style}';
+                                        this.style.boxShadow = '0px 0px 0px #FFFFFF';
+                                        this.style.backgroundColor = "#FFFFFF";
+                                        // console.log(this.innerText + ' HOVER');
+                                        }});
+                                    }}
+                                if ('{wch_textsize}' != '') {{
+                                    elements[i].style.fontSize = '{wch_textsize}';
+                                    }}
+                            }}
+                            else if (element_type == 'P' && '{wch_textsize}' != '') {{
+                                elements[i].style.fontSize = '{wch_textsize}';
+                                }}
+                        }} }}
+                        </script>  """
 
-    htmlstr = htmlstr.format(wgt_txt=wgt_txt, wch_hex_colour=wch_hex_colour, wch_border_style=wch_border_style)
+    htmlstr = htmlstr.format(wgt_txt=wgt_txt, wch_hex_colour=wch_hex_colour, wch_border_style=wch_border_style, wch_textsize=wch_textsize)
     components.html(f"{htmlstr}", height=0, width=0)
 
 
@@ -134,6 +166,7 @@ def display_iframe(filename, link, contextList):
 
 # Callback to assign the follow-up question is selected by the user
 def ask_followup_question(followup_question):
+    st.session_state['tab_context'] = 'Chat'  # Prevents side effect when first click after loading the page
     st.session_state.chat_askedquestion = followup_question
     st.session_state['input_message_key'] = st.session_state['input_message_key'] + 1
 
@@ -145,10 +178,11 @@ if st.session_state['tab_context'] != 'Chat' and st.session_state['chat_question
 
 
 # Chat 
+clear_chat = st.button("Clear chat", key="clear_chat", on_click=clear_chat_data)
+ChangeButtonStyle("Clear chat", "#ADCDE7", wch_border_style="none", wch_textsize="10px")
+
 input_text = st.text_input("You: ", placeholder="type your question", value=st.session_state.chat_askedquestion, key="input"+str(st.session_state ['input_message_key']), on_change=questionAsked)
 
-clear_chat = st.button("Clear chat", key="clear_chat", on_click=clear_chat_data)
-ChangeButtonStyle("Clear chat", "#885555")
 
 def show_document_source(filename, link, contextList):
     st.session_state['do_not_process_question'] = True
@@ -179,8 +213,11 @@ if st.session_state['chat_history']:
             answer_with_citations, sourceList, matchedSourcesList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['chat_history'][i][1], st.session_state['chat_source_documents'][i])
             st.session_state['chat_history'][i] = st.session_state['chat_history'][i][:1] + (answer_with_citations,)
 
-            answer_with_citations = re.sub(r'\$\^\{(.*?)\}\$', r'(\1)', st.session_state['chat_history'][i][1]) # message() does not get Latex nor html
-            message(answer_with_citations, key=str(i))
+            answer_with_citations = re.sub(r'\$\^\{(.*?)\}\$', r'(\1)', st.session_state['chat_history'][i][1]).strip() # message() does not get Latex nor html
+            # message(answer_with_citations key=str(i))
+            answer_message_height = int((len(answer_with_citations) / 22) * 1.1 * 8)
+            st.text_area(label='', value=answer_with_citations, height=answer_message_height, key=str(i))
+            st.write("<br>", unsafe_allow_html=True)
 
             # Display proposed follow-up questions which can be clicked on to ask that question automatically
             if len(st.session_state['chat_followup_questions']) > 0:
@@ -191,29 +228,31 @@ if st.session_state['chat_history']:
                         str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
                         st.button(str_followup_question, key=1000+questionId, on_click=ask_followup_question, args=(followup_question, ))
 
-            # Selectbox to choose how to display the context(s) associated with the clicked source document name
-            st.session_state['chat_context_show_option'] = st.selectbox(
-                'Choose how to display context used to answer the question when clicking on a document source below:',
-                chat_context_show_options,
-                index=chat_context_show_options.index(st.session_state['chat_context_show_option'])
-            )
+            if len(sourceList) > 0:
+                st.write("<br><br>", unsafe_allow_html=True)
+                # Selectbox to choose how to display the context(s) associated with the clicked source document name
+                st.session_state['chat_context_show_option'] = st.selectbox(
+                    'Choose how to display context used to answer the question when clicking on a document source below:',
+                    chat_context_show_options,
+                    index=chat_context_show_options.index(st.session_state['chat_context_show_option'])
+                )
 
-            # Buttons to display the context(s) associated with the clicked source document name
-            for id in range(len(sourceList)):
-                st.button(f'({id+1}) {filenameList[id]}', key=filenameList[id], on_click=show_document_source, args=(filenameList[id], linkList[id], st.session_state['chat_context'][i][sourceList[id]], ))
+                # Buttons to display the context(s) associated with the clicked source document name
+                for id in range(len(sourceList)):
+                    st.button(f'({id+1}) {filenameList[id]}', key=filenameList[id], on_click=show_document_source, args=(filenameList[id], linkList[id], st.session_state['chat_context'][i][sourceList[id]], ))
 
-            # Source Buttons Styles
-            for id in range(len(sourceList)):
-                if filenameList[id] in matchedSourcesList:
-                    ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#228822", wch_border_style='none')
-                else:
-                    ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#884422", wch_border_style='none')
+                # Source Buttons Styles
+                for id in range(len(sourceList)):
+                    if filenameList[id] in matchedSourcesList:
+                        ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#228822", wch_border_style='none', wch_textsize='10px')
+                    else:
+                        ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#AAAAAA", wch_border_style='none', wch_textsize='10px')
 
 
             for questionId, followup_question in enumerate(st.session_state['chat_followup_questions']):
                 if followup_question:
                     str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
-                    ChangeButtonStyle(str_followup_question, "#5555FF", wch_border_style='none')
+                    ChangeButtonStyle(str_followup_question, "#5555FF", wch_border_style='none', wch_textsize='14px')
 
 
         # The old questions and answers within the history
