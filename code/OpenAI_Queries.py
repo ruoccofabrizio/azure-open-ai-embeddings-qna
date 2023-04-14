@@ -31,7 +31,7 @@ def check_deployment():
         st.success("Embedding is working!")
     except Exception as e:
         st.error(f"""Embedding model is not working.  
-            Please check you have a deployment name {llm_helper.model} in your Azure OpenAI resource {llm_helper.api_base}.  
+            Please check you have a deployment named "text-embedding-ada-002" for "text-embedding-ada-002" model in your Azure OpenAI resource {llm_helper.api_base}.  
             Then restart your application.
             """)
         st.error(traceback.format_exc())
