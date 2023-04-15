@@ -27,7 +27,7 @@ You have multiple options to run the code:
 -   [Run WebApp locally in Docker against an existing Redis deployment](#run-webapp-locally-in-docker-against-an-existing-redis-deployment)
 
 ## Deploy on Azure (WebApp + Azure Cache for Redis Enterprise + Batch Processing)
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2FdeploymentACRE.json)
 
 Click on the Deploy to Azure button to automatically deploy a template on Azure by with the resources needed to run this example. This option will provision an instance of [Azure Cache for Redis](https://learn.microsoft.com/azure/azure-cache-for-redis/cache-overview) with [RediSearch](https://learn.microsoft.com/azure/azure-cache-for-redis/cache-redis-modules#redisearch) installed to store vectors and perform the similiarity search. 
 
@@ -39,7 +39,7 @@ Please be aware that you still need:
 You will add the endpoint and access key information for these resources when deploying the template. 
 
 ## Deploy on Azure (WebApp + Redis Stack + Batch Processing)
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2FdeploymentACRE.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment.json)
 
 Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
 
