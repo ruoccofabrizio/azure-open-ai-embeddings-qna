@@ -35,6 +35,7 @@ Please be aware that you still need:
 -   an existing Azure OpenAI resource with models deployments (instruction models e.g. `text-davinci-003`, and embeddings models e.g. `text-embedding-ada-002`) 
 -   an existing Form Recognizer Resource 
 -   an existing Translator Resource
+-   Azure marketplace access. (Azure Cache for Redis Enterprise uses the marketplace for IP billing)
 
 You will add the endpoint and access key information for these resources when deploying the template. 
 
