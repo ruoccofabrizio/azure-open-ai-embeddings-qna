@@ -9,6 +9,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms import AzureOpenAI
 from langchain.vectorstores.base import VectorStore
 from langchain.chains import ChatVectorDBChain
+from langchain.chains import ConversationalRetrievalChain
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT
@@ -17,6 +18,9 @@ from langchain.document_loaders import WebBaseLoader
 from langchain.text_splitter import TokenTextSplitter, TextSplitter
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders import TextLoader
+from langchain.chat_models import ChatOpenAI
+from langchain.schema import AIMessage, HumanMessage, SystemMessage
+
 
 from utilities.formrecognizer import AzureFormRecognizerClient
 from utilities.azureblobstorage import AzureBlobStorageClient
@@ -27,6 +31,7 @@ from utilities.redis import RedisExtended
 import pandas as pd
 import urllib
 
+from fake_useragent import UserAgent
 class LLMHelper:
     def __init__(self,
         document_loaders : BaseLoader = None, 
@@ -43,7 +48,7 @@ class LLMHelper:
         load_dotenv()
         openai.api_type = "azure"
         openai.api_base = os.getenv('OPENAI_API_BASE')
-        openai.api_version = "2022-12-01"
+        openai.api_version = "2023-03-15-preview"
         openai.api_key = os.getenv("OPENAI_API_KEY")
 
         # Azure OpenAI settings
@@ -52,6 +57,7 @@ class LLMHelper:
         self.index_name: str = "embeddings"
         self.model: str = os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', "text-embedding-ada-002")
         self.deployment_name: str = os.getenv("OPENAI_ENGINE", os.getenv("OPENAI_ENGINES", "text-davinci-003"))
+        self.deployment_type: str = os.getenv("OPENAI_DEPLOYMENT_TYPE", "Text")
 
         # Vector store settings
         self.vector_store_address: str = os.getenv('REDIS_ADDRESS', "localhost")
@@ -69,7 +75,10 @@ class LLMHelper:
         self.document_loaders: BaseLoader = WebBaseLoader if document_loaders is None else document_loaders
         self.text_splitter: TextSplitter = TokenTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap) if text_splitter is None else text_splitter
         self.embeddings: OpenAIEmbeddings = OpenAIEmbeddings(model=self.model, chunk_size=1) if embeddings is None else embeddings
-        self.llm: AzureOpenAI = AzureOpenAI(deployment_name=self.deployment_name) if llm is None else llm
+        if self.deployment_type == "Chat":
+            self.llm: ChatOpenAI = ChatOpenAI(model_name=self.deployment_name, engine=self.deployment_name) if llm is None else llm
+        else:
+            self.llm: AzureOpenAI = AzureOpenAI(deployment_name=self.deployment_name) if llm is None else llm
         self.vector_store: RedisExtended = RedisExtended(redis_url=self.vector_store_full_address, index_name=self.index_name, embedding_function=self.embeddings.embed_query) if vector_store is None else vector_store   
         self.k : int = 3 if k is None else k
 
@@ -78,16 +87,34 @@ class LLMHelper:
         self.enable_translation : bool = False if enable_translation is None else enable_translation
         self.translator : AzureTranslatorClient = AzureTranslatorClient() if translator is None else translator
 
+        self.user_agent: UserAgent() = UserAgent()
+        self.user_agent.random
     def add_embeddings_lc(self, source_url):
         try:
             documents = self.document_loaders(source_url).load()
+            
+            # Convert to UTF-8 encoding for non-ascii text
+            for(document) in documents:
+                try:
+                    if document.page_content.encode("iso-8859-1") == document.page_content.encode("latin-1"):
+                        document.page_content = document.page_content.encode("iso-8859-1").decode("utf-8", errors="ignore")
+                except:
+                    pass
             docs = self.text_splitter.split_documents(documents)
+            
+            # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
+            # pattern = re.compile(r'[\x00-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')
+            pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')  # do not remove \x0a (\n) nor \x0d (\r)
+            for(doc) in docs:
+                doc.page_content = re.sub(pattern, '', doc.page_content)
+
             keys = []
             for i, doc in enumerate(docs):
                 # Create a unique key for the document
                 source_url = source_url.split('?')[0]
                 filename = "/".join(source_url.split('/')[4:])
                 hash_key = hashlib.sha1(f"{source_url}_{i}".encode('utf-8')).hexdigest()
+                hash_key = f"doc:{self.index_name}:{hash_key}"
                 keys.append(hash_key)
                 doc.metadata = {"source": f"[{source_url}]({source_url}_SAS_TOKEN_PLACEHOLDER_)" , "chunk": i, "key": hash_key, "filename": filename}
             self.vector_store.add_documents(documents=docs, redis_url=self.vector_store_full_address,  index_name=self.index_name, keys=keys)
@@ -103,7 +130,7 @@ class LLMHelper:
 
         # Upload the text to Azure Blob Storage
         converted_filename = f"converted/{filename}.txt"
-        source_url = self.blob_client.upload_file("\n".join(text), f"converted/{filename}.txt", content_type='text/plain')
+        source_url = self.blob_client.upload_file("\n".join(text), f"converted/{filename}.txt", content_type='text/plain; charset=utf-8')
 
         print(f"Converted file uploaded to {source_url} with filename {filename}")
         # Update the metadata to indicate that the file has been converted
@@ -140,10 +167,10 @@ class LLMHelper:
 
     def extract_followupquestions(self, answer):
         followupTag = answer.find('Follow-up Questions')
-        folloupQuestions = answer.find('<<')
+        followupQuestions = answer.find('<<')
 
         # take min of followupTag and folloupQuestions if not -1 to avoid taking the followup questions if there is no followupTag
-        followupTag = min(followupTag, folloupQuestions) if followupTag != -1 and folloupQuestions != -1 else max(followupTag, folloupQuestions)
+        followupTag = min(followupTag, followupQuestions) if followupTag != -1 and followupQuestions != -1 else max(followupTag, followupQuestions)
         answer_without_followupquestions = answer[:followupTag] if followupTag != -1 else answer
         followup_questions = answer[followupTag:].strip() if followupTag != -1 else ''
 
@@ -155,6 +182,11 @@ class LLMHelper:
             followup_questions_list.append(followup_questions[match.start()+2:match.end()-2])
             followup_questions = followup_questions[match.end():]
             match = re.search(pattern, followup_questions)
+        
+        # Special case when 'Follow-up questions:' appears in the answer after the <<
+        followupTag = answer_without_followupquestions.find('Follow-up Questions')
+        if followupTag != -1:
+            answer_without_followupquestions = answer_without_followupquestions[:followupTag]
 
         return answer_without_followupquestions, followup_questions_list
 
@@ -184,12 +216,12 @@ class LLMHelper:
     def get_semantic_answer_lang_chain(self, question, chat_history):
         question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
         doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=False, prompt=PROMPT)
-        chain = ChatVectorDBChain(
-            vectorstore=self.vector_store,
+        chain = ConversationalRetrievalChain(
+            retriever=self.vector_store.as_retriever(),
             question_generator=question_generator,
             combine_docs_chain=doc_chain,
             return_source_documents=True,
-            top_k_docs_for_context= self.k
+            # top_k_docs_for_context= self.k
         )
         result = chain({"question": question, "chat_history": chat_history})
         container_sas = self.blob_client.get_container_sas()
@@ -219,7 +251,10 @@ class LLMHelper:
         }
 
     def get_completion(self, prompt, **kwargs):
-        return self.llm(prompt)
+        if self.deployment_type == 'Chat':
+            return self.llm([HumanMessage(content=prompt)]).content
+        else:
+            return self.llm(prompt)
     
     def get_links_filenames(self, answer, sources):
         split_sources = sources.split('  \n ') # soures are expected to be of format '  \n  [filename1.ext](sourcelink1)  \n [filename2.ext](sourcelink2)  \n  [filename3.ext](sourcelink3)  \n '

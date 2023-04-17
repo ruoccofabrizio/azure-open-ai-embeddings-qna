@@ -157,9 +157,7 @@ def display_iframe(filename, link, contextList):
                 let textColor = '#222222';
                 if (prefersDark) {{ textColor = '#EEEEEE'; }}
                 var body = frame.contentWindow.document.querySelector('body');
-                console.log(textColor);
                 body.style.color = textColor;
-                console.log(body.style.color);
             }};
         </script>
         </div>
