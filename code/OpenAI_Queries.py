@@ -18,11 +18,13 @@ def check_deployment():
     #\ 1. Check if the llm is working
     try:
         llm_helper = LLMHelper()
-        llm_helper.llm("Generate a joke!")
+        llm_helper.get_completion("Generate a joke!")
         st.success("LLM is working!")
     except Exception as e:
-        st.error(f"""LLM is not working. 
-            Please check you have a deployment name {llm_helper.deployment_name} in your Azure OpenAI resource {llm_helper.api_base}.
+        st.error(f"""LLM is not working.  
+            Please check you have a deployment name {llm_helper.deployment_name} in your Azure OpenAI resource {llm_helper.api_base}.  
+            If you are using an Instructions based deployment (text-davinci-003), please check you have an environment variable OPENAI_DEPLOYMENT_TYPE=Text or delete the environment variable OPENAI_DEPLOYMENT_TYPE.  
+            If you are using a Chat based deployment (gpt-35-turbo or gpt-4-32k or gpt-4), please check you have an environment variable OPENAI_DEPLOYMENT_TYPE=Chat.  
             Then restart your application.
             """)
         st.error(traceback.format_exc())
@@ -33,7 +35,7 @@ def check_deployment():
         st.success("Embedding is working!")
     except Exception as e:
         st.error(f"""Embedding model is not working. 
-            Please check you have a deployment name {llm_helper.model} in your Azure OpenAI resource {llm_helper.api_base}.
+            Please check you have a deployment named "text-embedding-ada-002" for "text-embedding-ada-002" model in your Azure OpenAI resource {llm_helper.api_base}.  
             Then restart your application.
             """)
         st.error(traceback.format_exc())

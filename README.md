@@ -13,6 +13,9 @@ Therefore, we have provided a way for you to continue using the previous format 
 If you want to move to the new format, please go to:
 -   "Add Document" -> "Add documents in Batch" and click on "Convert all files and add embeddings" to reprocess your documents. 
           
+# Use the Repo with Chat based deployment (gpt-35-turbo or gpt-4-32k or gpt-4)
+By default, the repo uses an Instruction based model (like text-davinci-003) for QnA and Chat experience.  
+If you want to use a Chat based deployment (gpt-35-turbo or gpt-4-32k or gpt-4), please change the environment variables as described [here](#environment-variables)
 
 # Running this repo
 You have multiple options to run the code:
@@ -159,7 +162,8 @@ Here is the explanation of the parameters:
 
 | App Setting | Value | Note |
 | --- | --- | ------------- |
-|OPENAI_ENGINE|text-davinci-003|Instruction engine deployed in your Azure OpenAI resource|
+|OPENAI_ENGINE|text-davinci-003|Engine deployed in your Azure OpenAI resource. E.g. Instruction based model: text-davinci-003 or Chat based model: gpt-35-turbo or gpt-4-32k or gpt-4. Please use the deployment name and not the model name.|
+|OPENAI_DEPLOYMENT_TYPE | Text | Text for Instruction engines (text-davinci-003), <br> Chat for Chat based deployment (gpt-35-turbo or gpt-4-32k or gpt-4) |
 |OPENAI_EMBEDDINGS_ENGINE_DOC | text-embedding-ada-002  | Embedding engine for documents deployed in your Azure OpenAI resource|
 |OPENAI_EMBEDDINGS_ENGINE_QUERY | text-embedding-ada-002  | Embedding engine for query deployed in your Azure OpenAI resource|
 |OPENAI_API_BASE | https://YOUR_AZURE_OPENAI_RESOURCE.openai.azure.com/ | Your Azure OpenAI Resource name. Get it in the [Azure Portal](https://portal.azure.com)|
