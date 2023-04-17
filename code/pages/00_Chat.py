@@ -52,7 +52,11 @@ llm_helper = LLMHelper()
 
 
 def ChangeButtonStyle(wgt_txt, wch_hex_colour = '#000000', wch_border_style = '', wch_textsize=''):
-    htmlstr = """<script>var elements = window.parent.document.querySelectorAll('*'), i;
+    htmlstr = """<script>
+                    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    let backgroundColor = '#FFFFFF';
+                    if (prefersDark) {{ backgroundColor = '#0E1117'; }}
+                    var elements = window.parent.document.querySelectorAll('*'), i;
                     str_wgt_txt = '{wgt_txt}'
                     str_wgt_txt = str_wgt_txt.replace("/(^|[^\\])'/g", "$1\\'");
                     for (i = 0; i < elements.length; ++i)
@@ -75,14 +79,14 @@ def ChangeButtonStyle(wgt_txt, wch_hex_colour = '#000000', wch_border_style = ''
                                     elements[i].style.outline ='{wch_border_style}';
                                     elements[i].addEventListener('focus', function() {{
                                         this.style.outline = '{wch_border_style}';
-                                        this.style.boxShadow = '0px 0px 0px #FFFFFF';
-                                        this.style.backgroundColor = "#FFFFFF";
+                                        this.style.boxShadow = '0px 0px 0px ' + backgroundColor;
+                                        this.style.backgroundColor = '"' + backgroundColor + '"';
                                         // console.log(this.innerText + ' FOCUS');
                                         }});
                                     elements[i].addEventListener('hover', function() {{
                                         this.style.outline = '{wch_border_style}';
-                                        this.style.boxShadow = '0px 0px 0px #FFFFFF';
-                                        this.style.backgroundColor = "#FFFFFF";
+                                        this.style.boxShadow = '0px 0px 0px ' + backgroundColor;
+                                        this.style.backgroundColor = '"' + backgroundColor + '"';
                                         // console.log(this.innerText + ' HOVER');
                                         }});
                                     }}
@@ -146,6 +150,18 @@ def display_iframe(filename, link, contextList):
     <body>
         <div>
         <iframe id="{filename}" srcdoc="{text}" width="100%" height="480px"></iframe>
+        <script>
+            var frame = document.getElementById('{filename}');
+            frame.onload = function() {{
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                let textColor = '#222222';
+                if (prefersDark) {{ textColor = '#EEEEEE'; }}
+                var body = frame.contentWindow.document.querySelector('body');
+                console.log(textColor);
+                body.style.color = textColor;
+                console.log(body.style.color);
+            }};
+        </script>
         </div>
     </body>
     """

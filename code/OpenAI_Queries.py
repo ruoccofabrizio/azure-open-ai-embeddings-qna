@@ -69,21 +69,56 @@ def check_deployment():
         st.error(traceback.format_exc())
 
 
-def ChangeButtonStyle(wgt_txt, wch_hex_colour = '#000000', wch_border_style = ''):
-    htmlstr = """<script>var elements = window.parent.document.querySelectorAll('*'), i;
+def ChangeButtonStyle(wgt_txt, wch_hex_colour = '#000000', wch_border_style = '', wch_textsize=''):
+    htmlstr = """<script>
+                    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    let backgroundColor = '#FFFFFF';
+                    if (prefersDark) {{ backgroundColor = '#0E1117'; }}
+                    var elements = window.parent.document.querySelectorAll('*'), i;
                     str_wgt_txt = '{wgt_txt}'
                     str_wgt_txt = str_wgt_txt.replace("/(^|[^\\])'/g", "$1\\'");
                     for (i = 0; i < elements.length; ++i)
                     {{ if (elements[i].innerText == str_wgt_txt) 
                         {{
-                            elements[i].style.color  = '{wch_hex_colour}';
-                            let border_style = '{wch_border_style}';
-                            if (border_style.length > 0) {{
-                                elements[i].style.border ='{wch_border_style}';
+                            parentNode = elements[i].parentNode;
+                            element_type = elements[i].nodeName;
+                            parent_type = parentNode.nodeName;
+                            if (element_type == 'DIV' && parent_type == 'DIV') {{
+                                // console.log(elements[i].parentNode.parentNode.nodeName);
+                                elements[i].parentNode.parentNode.style.margin = "0"
+                                elements[i].parentNode.parentNode.style.gap = "0"
                                 }}
-                        }} }}</script>  """
+                            // console.log(str_wgt_txt + ' ( ' + element_type + ' ) : ' + parentNode + ' ( ' + parent_type + ' , ' + parentNode.innerText + ' )');
+                            if (element_type == 'BUTTON') {{
+                                elements[i].style.color  = '{wch_hex_colour}';
+                                let border_style = '{wch_border_style}';
+                                if (border_style.length > 0) {{
+                                    elements[i].style.border ='{wch_border_style}';
+                                    elements[i].style.outline ='{wch_border_style}';
+                                    elements[i].addEventListener('focus', function() {{
+                                        this.style.outline = '{wch_border_style}';
+                                        this.style.boxShadow = '0px 0px 0px ' + backgroundColor;
+                                        this.style.backgroundColor = '"' + backgroundColor + '"';
+                                        // console.log(this.innerText + ' FOCUS');
+                                        }});
+                                    elements[i].addEventListener('hover', function() {{
+                                        this.style.outline = '{wch_border_style}';
+                                        this.style.boxShadow = '0px 0px 0px ' + backgroundColor;
+                                        this.style.backgroundColor = '"' + backgroundColor + '"';
+                                        // console.log(this.innerText + ' HOVER');
+                                        }});
+                                    }}
+                                if ('{wch_textsize}' != '') {{
+                                    elements[i].style.fontSize = '{wch_textsize}';
+                                    }}
+                            }}
+                            else if (element_type == 'P' && '{wch_textsize}' != '') {{
+                                elements[i].style.fontSize = '{wch_textsize}';
+                                }}
+                        }} }}
+                        </script>  """
 
-    htmlstr = htmlstr.format(wgt_txt=wgt_txt, wch_hex_colour=wch_hex_colour, wch_border_style=wch_border_style)
+    htmlstr = htmlstr.format(wgt_txt=wgt_txt, wch_hex_colour=wch_hex_colour, wch_border_style=wch_border_style, wch_textsize=wch_textsize)
     components.html(f"{htmlstr}", height=0, width=0)
 
 @st.cache_data()
@@ -147,7 +182,7 @@ try:
 
     col1, col2, col3 = st.columns([2,2,2])
     with col1:
-        ChangeButtonStyle("Check deployment", "#885555")
+        ChangeButtonStyle("Check deployment", "#ADCDE7", wch_border_style="none", wch_textsize="10px")
         st.button("Check deployment", on_click=check_deployment)
     with col3:
         with st.expander("Settings"):
@@ -218,6 +253,18 @@ try:
         <body>
             <div>
             <iframe id="{filename}" srcdoc="{text}" width="100%" height="480px"></iframe>
+            <script>
+                var frame = document.getElementById('{filename}');
+                frame.onload = function() {{
+                    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    let textColor = '#222222';
+                    if (prefersDark) {{ textColor = '#EEEEEE'; }}
+                    var body = frame.contentWindow.document.querySelector('body');
+                    console.log(textColor);
+                    body.style.color = textColor;
+                    console.log(body.style.color);
+                }};
+            </script>
             </div>
         </body>
         """
@@ -260,10 +307,12 @@ try:
     # Display the sources and context - even if the page is reloaded
     if st.session_state['sources'] or st.session_state['context']:
         st.session_state['response'], sourceList, matchedSourcesList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['response'], st.session_state['sources'])
+        st.write("<br>", unsafe_allow_html=True)
         st.markdown("**Answer:**" + st.session_state['response'])
  
     # Display proposed follow-up questions which can be clicked on to ask that question automatically
     if len(st.session_state['followup_questions']) > 0:
+        st.write("<br>", unsafe_allow_html=True)
         st.markdown('**Proposed follow-up questions:**')
     with st.container():
         for questionId, followup_question in enumerate(st.session_state['followup_questions']):
@@ -273,11 +322,13 @@ try:
 
     if st.session_state['sources'] or st.session_state['context']:
         # Buttons to display the context used to answer
+        st.write("<br>", unsafe_allow_html=True)
         st.markdown('**Document sources:**')
         for id in range(len(sourceList)):
             st.button(f'({id+1}) {filenameList[id]}', key=filenameList[id], on_click=show_document_source, args=(filenameList[id], linkList[id], st.session_state['context'][sourceList[id]], ))
 
         # Details on the question and answer context
+        st.write("<br><br>", unsafe_allow_html=True)
         with st.expander("Question and Answer Context"):
             if not st.session_state['context'] is None and st.session_state['context'] != []:
                 for content_source in st.session_state['context'].keys():
@@ -291,14 +342,14 @@ try:
     # Source Buttons Styles
     for id in range(len(sourceList)):
         if filenameList[id] in matchedSourcesList:
-            ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#228822", wch_border_style='none')
+            ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#228822", wch_border_style='none', wch_textsize='10px')
         else:
-            ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#AAAAAA", wch_border_style='none')
+            ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#AAAAAA", wch_border_style='none', wch_textsize='10px')
 
     for questionId, followup_question in enumerate(st.session_state['followup_questions']):
         if followup_question:
             str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
-            ChangeButtonStyle(str_followup_question, "#5555FF", wch_border_style='none')
+            ChangeButtonStyle(str_followup_question, "#5555FF", wch_border_style='none', wch_textsize='14px')
 
     if st.session_state['translation_language'] and st.session_state['translation_language'] != '':
         st.write(f"Translation to other languages, 翻译成其他语言, النص باللغة العربية")
