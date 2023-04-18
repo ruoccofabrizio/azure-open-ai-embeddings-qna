@@ -140,7 +140,7 @@ def display_iframe(filename, link, contextList):
     <script>
         window.onload = function() {{
         setTimeout(function() {{
-            // Code to execute after 0.5 seconds
+            // Code to execute after 1.5 seconds
             var iframe = this.document.getElementById('{filename}');
             var element = iframe.contentDocument.getElementById('ContextTag0');
             if (element !== null) {{
@@ -148,7 +148,7 @@ def display_iframe(filename, link, contextList):
                 behavior: 'smooth',
                 }});
             }}
-        }}, 500);
+        }}, 1500);
         }};
     </script>
     </head>
