@@ -106,6 +106,7 @@ def ChangeButtonStyle(wgt_txt, wch_hex_colour = '#000000', wch_border_style = ''
 
 def questionAsked():
     st.session_state.chat_askedquestion = st.session_state["input"+str(st.session_state ['input_message_key'])]
+    st.session_state.chat_question = st.session_state.chat_askedquestion
 
 # Display the context(s) associated with a source document used to andwer, with automaic scroll to the yellow highlighted context
 def display_iframe(filename, link, contextList):
@@ -119,7 +120,11 @@ def display_iframe(filename, link, contextList):
             for i, context in enumerate(contextList):
                 context = llm_helper.clean_encoding(context)
                 contextSpan = f" <span id='ContextTag{i}' style='background-color: yellow; color: black'><b>{context}</b></span>"
+                print(contextSpan)
                 text = text.replace(context, contextSpan)
+                checkit = text.find('<span')
+                checkit2 = text.find('span>')
+                print(text[checkit:checkit2])
             text = text.replace('\n', '<br><br>')
 
         except Exception as e:
