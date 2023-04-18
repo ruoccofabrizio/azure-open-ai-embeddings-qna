@@ -89,14 +89,14 @@ try:
         st.dataframe(data, use_container_width=True)
 
         st.download_button("Download data", data.to_csv(index=False).encode('utf-8'), "embeddings.csv", "text/csv", key='download-embeddings')
-        ChangeButtonStyle("Download data", "#ADCDE7", wch_textsize="10px")
+        ChangeButtonStyle("Download data", "#ADCDE7", wch_textsize="12px")
 
         st.text("")
         st.text("")
         col1, col2, col3, col4 = st.columns([3,2,2,1])
         with col1:
             st.selectbox("Embedding id to delete", data.get('key',[]), key="embedding_to_drop")
-            # ChangeButtonStyle("Embedding id to delete", "#ADCDE7", wch_textsize="10px")
+            # ChangeButtonStyle("Embedding id to delete", "#ADCDE7", wch_textsize="12px")
         with col2:
             st.text("")
             st.text("")
@@ -104,12 +104,12 @@ try:
             ChangeButtonStyle("Delete embedding", "#ADCDE7", wch_textsize="10px")
         with col3:
             st.selectbox("File name to delete", set(data.get('filename',[])), key="file_to_drop")
-            # ChangeButtonStyle("File name to delete", "#ADCDE7", wch_textsize="10px")
+            # ChangeButtonStyle("File name to delete", "#ADCDE7", wch_textsize="12px")
         with col4:
             st.text("")
             st.text("")
             st.button("Delete file", on_click=delete_file)
-            ChangeButtonStyle("Delete file", "#ADCDE7", wch_textsize="10px")
+            ChangeButtonStyle("Delete file", "#ADCDE7", wch_textsize="12px")
 
         st.text("")
         st.text("")

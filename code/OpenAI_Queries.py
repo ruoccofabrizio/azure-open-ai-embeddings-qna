@@ -221,7 +221,7 @@ try:
                 text = llm_helper.clean_encoding(text)
                 for i, context in enumerate(contextList):
                     context = llm_helper.clean_encoding(context)
-                    contextSpan = f" <span id='ContextTag{i}' style='background-color: yellow'><b>{context}</b></span>"
+                    contextSpan = f" <span id='ContextTag{i}' style='background-color: yellow; color: black'><b>{context}</b></span>"
                     text = text.replace(context, contextSpan)
                 text = text.replace('\n', '<br><br>')
 
