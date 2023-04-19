@@ -34,7 +34,7 @@ def check_deployment():
         llm_helper.embeddings.embed_documents(texts=["This is a test"])
         st.success("Embedding is working!")
     except Exception as e:
-        st.error(f"""Embedding model is not working. 
+        st.error(f"""Embedding model is not working.  
             Please check you have a deployment named "text-embedding-ada-002" for "text-embedding-ada-002" model in your Azure OpenAI resource {llm_helper.api_base}.  
             Then restart your application.
             """)
@@ -45,25 +45,25 @@ def check_deployment():
         llm_helper.translator.translate("This is a test", "it")
         st.success("Translation is working!")
     except Exception as e:
-        st.error(f"""Translation model is not working. 
-            Please check your Azure Translator key in the App Settings.
-            Then restart your application.
+        st.error(f"""Translation model is not working.  
+            Please check your Azure Translator key in the App Settings.  
+            Then restart your application.  
             """)
         st.error(traceback.format_exc())
     #\ 4. Check if the Redis is working with previous version of data
     try:
         llm_helper = LLMHelper()
         if llm_helper.vector_store.check_existing_index("embeddings-index"):
-            st.warning("""Seems like you're using a Redis with an old data structure.
-            If you want to use the new data structure, you can start using the app and go to "Add Document" -> "Add documents in Batch" and click on "Convert all files and add embeddings" to reprocess your documents. 
-            To remove this working, please delete the index "embeddings-index" from your Redis.
+            st.warning("""Seems like you're using a Redis with an old data structure.  
+            If you want to use the new data structure, you can start using the app and go to "Add Document" -> "Add documents in Batch" and click on "Convert all files and add embeddings" to reprocess your documents.  
+            To remove this working, please delete the index "embeddings-index" from your Redis.  
             If you prefer to use the old data structure, please change your Web App container image to point to the docker image: fruocco/oai-embeddings:2023-03-27_25. 
             """)
         else:
             st.success("Redis is working!")
     except Exception as e:
         st.error(f"""Redis is not working. 
-            Please check your Redis connection string in the App Settings.
+            Please check your Redis connection string in the App Settings.  
             Then restart your application.
             """)
         st.error(traceback.format_exc())

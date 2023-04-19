@@ -21,7 +21,6 @@ from langchain.document_loaders import TextLoader
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 
-
 from utilities.formrecognizer import AzureFormRecognizerClient
 from utilities.azureblobstorage import AzureBlobStorageClient
 from utilities.translator import AzureTranslatorClient
@@ -32,6 +31,7 @@ import pandas as pd
 import urllib
 
 from fake_useragent import UserAgent
+
 class LLMHelper:
     def __init__(self,
         document_loaders : BaseLoader = None, 
@@ -89,6 +89,7 @@ class LLMHelper:
 
         self.user_agent: UserAgent() = UserAgent()
         self.user_agent.random
+
     def add_embeddings_lc(self, source_url):
         try:
             documents = self.document_loaders(source_url).load()
@@ -282,3 +283,4 @@ class LLMHelper:
         except Exception as e:
             reencodedtext = text
         return reencodedtext
+

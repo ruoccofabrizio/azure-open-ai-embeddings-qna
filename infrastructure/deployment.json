@@ -105,6 +105,13 @@
         "description": "OpenAI Engine"
       }
     },
+    "OpenAIDeploymentType": {
+      "type": "string",
+      "defaultValue": "Text",
+      "metadata": {
+        "description": "OpenAI Deployment Type. Text for an Instructions based deployment (text-davinci-003). Chat for a Chat based deployment (gpt-35-turbo or gpt-4-32k or gpt-4)."
+      }
+    },
     "OpenAIEmbeddingsEngineDoc": {
       "type": "string",
       "defaultValue": "text-embedding-ada-002",
@@ -477,6 +484,7 @@
       "properties": {
         "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('Microsoft.Insights/components', parameters('ApplicationInsightsName')), '2015-05-01').InstrumentationKey]",
         "OPENAI_ENGINE": "[parameters('OpenAIEngine')]",
+        "OPENAI_DEPLOYMENT_TYPE": "[parameters('OpenAIDeploymentType')]",
         "OPENAI_EMBEDDINGS_ENGINE_DOC": "[parameters('OpenAIEmbeddingsEngineDoc')]",
         "OPENAI_EMBEDDINGS_ENGINE_QUERY": "[parameters('OpenAIEmbeddingsEngineQuery')]",
         "REDIS_ADDRESS": "[concat(parameters('DNSNameLabel'),'.' , resourceGroup().location ,'.azurecontainer.io')]",
