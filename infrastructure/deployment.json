@@ -126,6 +126,20 @@
         "description": "OpenAI Embeddings Engine for Queries"
       }
     },
+    "OpenAITemperature": {
+      "type": "string",
+      "defaultValue": "0.7",
+      "metadata": {
+        "description": "OpenAI Temperature"
+      }
+    },
+    "OpenAIMaxTokens": {
+      "type": "string",
+      "defaultValue": "-1",
+      "metadata": {
+        "description": "OpenAI Max Tokens"
+      }
+    },
     "FormRecognizerEndpoint": {
       "type": "string",
       "metadata": {
@@ -332,6 +346,14 @@
               "value": "[parameters('OpenAIKey')]"
             },
             {
+              "name": "OPENAI_TEMPERATURE",
+              "value": "[parameters('OpenAITemperature')]"
+            },
+            {
+              "name": "OPENAI_MAX_TOKENS",
+              "value": "[parameters('OpenAIMaxTokens')]"
+            },
+            {
               "name": "OPENAI_EMBEDDINGS_ENGINE_DOC",
               "value": "[parameters('OpenAIEmbeddingsEngineDoc')]"
             },
@@ -491,6 +513,8 @@
         "REDIS_PASSWORD": "[parameters('RedisPassword')]",
         "OPENAI_API_BASE": "[concat('https://', parameters('OpenAIName'),'.openai.azure.com/')]",
         "OPENAI_API_KEY": "[parameters('OpenAIKey')]",
+        "OPENAI_TEMPERATURE": "[parameters('OpenAITemperature')]",
+        "OPENAI_MAX_TOKENS": "[parameters('OpenAIMaxTokens')]",
         "BLOB_ACCOUNT_NAME": "[parameters('StorageAccountName')]",
         "BLOB_ACCOUNT_KEY": "[listkeys(resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName')), '2015-05-01-preview').key1]",
         "BLOB_CONTAINER_NAME": "[variables('BlobContainerName')]",
