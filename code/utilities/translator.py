@@ -11,9 +11,17 @@ class AzureTranslatorClient:
         self.translate_key = translate_key if translate_key else os.getenv('TRANSLATE_KEY')
         self.translate_region = translate_region if translate_region else os.getenv('TRANSLATE_REGION')
         self.translate_endpoint = translate_endpoint if translate_endpoint else os.getenv('TRANSLATE_ENDPOINT')
+        self.api_version = "3.0"
+
+        if os.getenv('VNET_DEPLOYMENT', 'false') == 'false':
+            self.detect_endpoint = urllib.parse.urljoin(self.translate_endpoint, f"/detect?api-version={self.api_version}")
+            self.translate_endpoint = urllib.parse.urljoin(self.translate_endpoint, f"/translate?api-version={self.api_version}")
+        else:
+            self.detect_endpoint = urllib.parse.urljoin(self.translate_endpoint, f"/translator/text/v3.0/detect?api-version={self.api_version}")
+            self.translate_endpoint = urllib.parse.urljoin(self.translate_endpoint, f"/translator/text/v3.0/translate?api-version={self.api_version}")
+
 
     def translate(self, text, language='en'):
-        endpoint_detect = os.environ['TRANSLATE_ENDPOINT'] + "/detect?api-version=3.0"
         headers = {
             'Ocp-Apim-Subscription-Key': self.translate_key,
             'Ocp-Apim-Subscription-Region': self.translate_region,
@@ -23,19 +31,17 @@ class AzureTranslatorClient:
         body = [{
             'text': text
         }]
-        request = requests.post(endpoint_detect, params=params, headers=headers, json=body)
+        request = requests.post(self.detect_endpoint, params=params, headers=headers, json=body)
         response = request.json()
         if (response[0]['language'] != language):
-            endpoint_translate = self.translate_endpoint + "/translate?api-version=3.0"
             params = urllib.parse.urlencode({
-                'api-version': '3.0',
                 'from': response[0]['language'],
                 'to': language
             })
             body = [{
                 'text': text
             }]
-            request = requests.post(endpoint_translate, params=params, headers=headers, json=body)
+            request = requests.post(self.translate_endpoint, params=params, headers=headers, json=body)
             response = request.json()
             return response[0]['translations'][0]['text']
         else:
@@ -43,10 +49,10 @@ class AzureTranslatorClient:
         
 
     def get_available_languages(self):
-        if os.getenv('PREVENT_OUTBOUND_CALLS', 'false') == 'true':
+        if os.getenv('VNET_DEPLOYMENT', 'false') == 'true':
             available_languages = default_languages['translation']
         else:
-            r = requests.get("https://api.cognitive.microsofttranslator.com/languages?api-version=3.0&scope=translation")
+            r = requests.get(f"https://api.cognitive.microsofttranslator.com/languages?api-version={self.api_version}&scope=translation")
             available_languages = r.json()['translation']
         languages = {}
         for k,v  in available_languages.items():
