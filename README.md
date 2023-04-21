@@ -182,6 +182,8 @@ Here is the explanation of the parameters:
 |OPENAI_EMBEDDINGS_ENGINE_QUERY | text-embedding-ada-002  | Embedding engine for query deployed in your Azure OpenAI resource|
 |OPENAI_API_BASE | https://YOUR_AZURE_OPENAI_RESOURCE.openai.azure.com/ | Your Azure OpenAI Resource name. Get it in the [Azure Portal](https://portal.azure.com)|
 |OPENAI_API_KEY| YOUR_AZURE_OPENAI_KEY | Your Azure OpenAI API Key. Get it in the [Azure Portal](https://portal.azure.com)|
+|OPENAI_TEMPERATURE|0.7| Azure OpenAI Temperature |
+|OPENAI_MAX_TOKENS|-1| Azure OpenAI Max Tokens |
 |REDIS_ADDRESS| api | URL for Redis Stack: "api" for docker compose|
 |REDIS_PORT | 6379 | Port for Redis |
 |REDIS_PASSWORD| redis-stack-password | OPTIONAL - Password for your Redis Stack|
