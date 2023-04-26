@@ -8,7 +8,7 @@ import chardet
 from utilities.helper import LLMHelper
 import uuid
 from redis.exceptions import ResponseError 
-
+from urllib import parse
     
 def upload_text_and_embeddings():
     file_name = f"{uuid.uuid4()}.txt"
@@ -81,7 +81,7 @@ try:
                     # Get OCR with Layout API and then add embeddigns
                     converted_filename = llm_helper.convert_file_and_add_embeddings(st.session_state['file_url'], st.session_state['filename'], st.session_state['translate'])
                 
-                llm_helper.blob_client.upsert_blob_metadata(uploaded_file.name, {'converted': 'true', 'embeddings_added': 'true', 'converted_filename': converted_filename})
+                llm_helper.blob_client.upsert_blob_metadata(uploaded_file.name, {'converted': 'true', 'embeddings_added': 'true', 'converted_filename': parse.quote(converted_filename)})
                 st.success(f"File {uploaded_file.name} embeddings added to the knowledge base.")
             
             # pdf_display = f'<iframe src="{st.session_state["file_url"]}" width="700" height="1000" type="application/pdf"></iframe>'
