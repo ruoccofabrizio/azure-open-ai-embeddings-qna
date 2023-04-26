@@ -2,9 +2,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import streamlit as st
+import streamlit.components.v1 as components
 import os
 import traceback
 from utilities.helper import LLMHelper
+
+import requests
+import regex as re
 
 import logging
 logger = logging.getLogger('azure.core.pipeline.policies.http_logging_policy').setLevel(logging.WARNING)
@@ -65,6 +69,58 @@ def check_deployment():
         st.error(traceback.format_exc())
 
 
+def ChangeButtonStyle(wgt_txt, wch_hex_colour = '#000000', wch_border_style = '', wch_textsize=''):
+    htmlstr = """<script>
+                    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    let backgroundColor = '#FFFFFF';
+                    if (prefersDark) {{ backgroundColor = '#0E1117'; }}
+                    var elements = window.parent.document.querySelectorAll('*'), i;
+                    str_wgt_txt = '{wgt_txt}'
+                    str_wgt_txt = str_wgt_txt.replace("/(^|[^\\])'/g", "$1\\'");
+                    for (i = 0; i < elements.length; ++i)
+                    {{ if (elements[i].innerText == str_wgt_txt) 
+                        {{
+                            parentNode = elements[i].parentNode;
+                            element_type = elements[i].nodeName;
+                            parent_type = parentNode.nodeName;
+                            if (element_type == 'DIV' && parent_type == 'DIV') {{
+                                // console.log(elements[i].parentNode.parentNode.nodeName);
+                                elements[i].parentNode.parentNode.style.margin = "0"
+                                elements[i].parentNode.parentNode.style.gap = "0"
+                                }}
+                            // console.log(str_wgt_txt + ' ( ' + element_type + ' ) : ' + parentNode + ' ( ' + parent_type + ' , ' + parentNode.innerText + ' )');
+                            if (element_type == 'BUTTON') {{
+                                elements[i].style.color  = '{wch_hex_colour}';
+                                let border_style = '{wch_border_style}';
+                                if (border_style.length > 0) {{
+                                    elements[i].style.border ='{wch_border_style}';
+                                    elements[i].style.outline ='{wch_border_style}';
+                                    elements[i].addEventListener('focus', function() {{
+                                        this.style.outline = '{wch_border_style}';
+                                        this.style.boxShadow = '0px 0px 0px ' + backgroundColor;
+                                        this.style.backgroundColor = '"' + backgroundColor + '"';
+                                        // console.log(this.innerText + ' FOCUS');
+                                        }});
+                                    elements[i].addEventListener('hover', function() {{
+                                        this.style.outline = '{wch_border_style}';
+                                        this.style.boxShadow = '0px 0px 0px ' + backgroundColor;
+                                        this.style.backgroundColor = '"' + backgroundColor + '"';
+                                        // console.log(this.innerText + ' HOVER');
+                                        }});
+                                    }}
+                                if ('{wch_textsize}' != '') {{
+                                    elements[i].style.fontSize = '{wch_textsize}';
+                                    }}
+                            }}
+                            else if (element_type == 'P' && '{wch_textsize}' != '') {{
+                                elements[i].style.fontSize = '{wch_textsize}';
+                                }}
+                        }} }}
+                        </script>  """
+
+    htmlstr = htmlstr.format(wgt_txt=wgt_txt, wch_hex_colour=wch_hex_colour, wch_border_style=wch_border_style, wch_textsize=wch_textsize)
+    components.html(f"{htmlstr}", height=0, width=0)
+
 @st.cache_data()
 def get_languages():
     return llm_helper.translator.get_available_languages()
@@ -75,14 +131,34 @@ try:
     default_question = "" 
     default_answer = ""
 
+
     if 'question' not in st.session_state:
         st.session_state['question'] = default_question
-    # if 'prompt' not in st.session_state:
-    #     st.session_state['prompt'] = os.getenv("QUESTION_PROMPT", "Please reply to the question using only the information present in the text above. If you can't find it, reply 'Not in the text'.\nQuestion: _QUESTION_\nAnswer:").replace(r'\n', '\n')
     if 'response' not in st.session_state:
         st.session_state['response'] = default_answer
     if 'context' not in st.session_state:
         st.session_state['context'] = ""
+    if 'sources' not in st.session_state:
+        st.session_state['sources'] = ""
+    if 'followup_questions' not in st.session_state:
+        st.session_state['followup_questions'] = []
+    if 'input_message_key' not in st.session_state:
+        st.session_state ['input_message_key'] = 1
+    if 'do_not_process_question' not in st.session_state:
+        st.session_state['do_not_process_question'] = False
+
+    if 'askedquestion' not in st.session_state:
+        st.session_state.askedquestion = default_question
+
+    if 'context_show_option' not in st.session_state:
+        st.session_state['context_show_option'] = 'context within full source document'
+
+
+    if 'tab_context' not in st.session_state:
+        st.session_state['tab_context'] = 'Not opened yet'
+    else:
+        if st.session_state['question'] != '' and st.session_state['tab_context'] != 'Not opened yet' and st.session_state['tab_context'] != 'Chat':
+            st.session_state['tab_context'] = 'Open_Queries'
 
     # Set page layout to wide screen and menu item
     menu_items = {
@@ -106,6 +182,7 @@ try:
 
     col1, col2, col3 = st.columns([2,2,2])
     with col1:
+        ChangeButtonStyle("Check deployment", "#ADCDE7", wch_border_style="none", wch_textsize="10px")
         st.button("Check deployment", on_click=check_deployment)
     with col3:
         with st.expander("Settings"):
@@ -118,16 +195,159 @@ try:
             # st.temperature = st.slider("Temperature", 0.0, 1.0, 0.1)
             st.selectbox("Language", [None] + list(available_languages.keys()), key='translation_language')
 
-    question = st.text_input("OpenAI Semantic Answer", default_question)
+    # Callback to display document sources
+    def show_document_source(filename, link, contextList):
+        st.session_state['do_not_process_question'] = True
+        display_iframe(filename, link, contextList)
 
-    if question != '':
-        st.session_state['question'] = question
-        st.session_state['question'], st.session_state['response'], st.session_state['context'], sources = llm_helper.get_semantic_answer_lang_chain(question, [])
-        st.markdown("Answer:" + st.session_state['response'])
-        st.markdown(f'\n\nSources: {sources}') 
+    # Callback to assign the follow-up question is selected by the user
+    def ask_followup_question(followup_question):
+        st.session_state.askedquestion = followup_question
+        st.session_state['input_message_key'] = st.session_state['input_message_key'] + 1
+
+    def questionAsked():
+        st.session_state.askedquestion = st.session_state["input"+str(st.session_state ['input_message_key'])]
+
+    question = st.text_input("Azure OpenAI Semantic Answer", value=st.session_state['askedquestion'], key="input"+str(st.session_state ['input_message_key']), on_change=questionAsked)
+
+    # Display the context(s) associated with a source document used to andwer, with automaic scroll to the yellow highlighted context
+    def display_iframe(filename, link, contextList):
+        st.session_state['do_not_process_question'] = True
+        st.session_state['askedquestion'] = st.session_state.question
+        if st.session_state['context_show_option'] == 'context within full source document':
+            try:
+                response = requests.get(link)
+                text = response.text
+                text = llm_helper.clean_encoding(text)
+                for i, context in enumerate(contextList):
+                    context = llm_helper.clean_encoding(context)
+                    contextSpan = f" <span id='ContextTag{i}' style='background-color: yellow; color: black'><b>{context}</b></span>"
+                    text = text.replace(context, contextSpan)
+                text = text.replace('\n', '<br><br>')
+
+            except Exception as e:
+                text = "Could not load the document source content"
+        else:
+            text = ""
+            for context in contextList:
+                text = text + context.replace('\n', '<br><br>') + '<br>'
+
+        html_content = """
+        <!DOCTYPE html>
+        <head>
+        <script>
+            window.onload = function() {{
+            setTimeout(function() {{
+                // Code to execute after 1.5 seconds
+                var iframe = this.document.getElementById('{filename}');
+                var element = iframe.contentDocument.getElementById('ContextTag0');
+                if (element !== null) {{
+                    element.scrollIntoView({{
+                    behavior: 'smooth',
+                    }});
+                }}
+            }}, 1500);
+            }};
+        </script>
+        </head>
+        <body>
+            <div>
+            <iframe id="{filename}" srcdoc="{text}" width="100%" height="480px"></iframe>
+            <script>
+                var frame = document.getElementById('{filename}');
+                frame.onload = function() {{
+                    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    let textColor = '#222222';
+                    if (prefersDark) {{ textColor = '#EEEEEE'; }}
+                    var body = frame.contentWindow.document.querySelector('body');
+                    body.style.color = textColor;
+                }};
+            </script>
+            </div>
+        </body>
+        """
+
+        def close_iframe():
+            placeholder.empty()
+            st.session_state['do_not_process_question'] = True
+
+        st.button("Close", on_click=close_iframe)
+        
+        placeholder = st.empty()
+        with placeholder:
+            htmlcontent = html_content.format(filename=filename, text=text)
+            components.html(htmlcontent, height=500)
+
+        pass
+
+    if st.session_state['tab_context'] != 'Open_Queries' and st.session_state['question'] != '' and st.session_state['question'] != st.session_state['followup_questions']:
+        st.session_state['tab_context'] = 'Open_Queries'
+        st.session_state['do_not_process_question'] = True
+        ask_followup_question(st.session_state['question'])
+
+    # Answer the question if any
+    if st.session_state.askedquestion != '' and st.session_state['do_not_process_question'] != True:
+        st.session_state['question'] = st.session_state.askedquestion
+        st.session_state.askedquestion = ""
+        st.session_state['question'], \
+        st.session_state['response'], \
+        st.session_state['context'], \
+        st.session_state['sources'] = llm_helper.get_semantic_answer_lang_chain(st.session_state['question'], [])
+        st.session_state['response'], followup_questions_list = llm_helper.extract_followupquestions(st.session_state['response'])
+        st.session_state['followup_questions'] = followup_questions_list
+        st.session_state['response'] = llm_helper.clean_encoding(st.session_state['response'])
+        st.session_state['context'] = llm_helper.clean_encoding(st.session_state['context'])
+
+    st.session_state['do_not_process_question'] = False
+    sourceList = []
+
+
+    # Display the sources and context - even if the page is reloaded
+    if st.session_state['sources'] or st.session_state['context']:
+        st.session_state['response'], sourceList, matchedSourcesList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['response'], st.session_state['sources'])
+        st.write("<br>", unsafe_allow_html=True)
+        st.markdown("**Answer:**" + st.session_state['response'])
+ 
+    # Display proposed follow-up questions which can be clicked on to ask that question automatically
+    if len(st.session_state['followup_questions']) > 0:
+        st.write("<br>", unsafe_allow_html=True)
+        st.markdown('**Proposed follow-up questions:**')
+    with st.container():
+        for questionId, followup_question in enumerate(st.session_state['followup_questions']):
+            if followup_question:
+                str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
+                st.button(str_followup_question, key=1000+questionId, on_click=ask_followup_question, args=(followup_question, ))
+
+    if st.session_state['sources'] or st.session_state['context']:
+        # Buttons to display the context used to answer
+        st.write("<br>", unsafe_allow_html=True)
+        st.markdown('**Document sources:**')
+        for id in range(len(sourceList)):
+            st.button(f'({id+1}) {filenameList[id]}', key=filenameList[id], on_click=show_document_source, args=(filenameList[id], linkList[id], st.session_state['context'][sourceList[id]], ))
+
+        # Details on the question and answer context
+        st.write("<br><br>", unsafe_allow_html=True)
         with st.expander("Question and Answer Context"):
-            st.markdown(st.session_state['context'].replace('$', '\$'))
-            st.markdown(f"SOURCES: {sources}") 
+            if not st.session_state['context'] is None and st.session_state['context'] != []:
+                for content_source in st.session_state['context'].keys():
+                    st.markdown(f"#### {content_source}")
+                    for context_text in st.session_state['context'][content_source]:
+                        context_text = llm_helper.clean_encoding(context_text)
+                        st.markdown(f"{context_text}")
+
+            st.markdown(f"SOURCES: {st.session_state['sources']}") 
+
+    # Source Buttons Styles
+    for id in range(len(sourceList)):
+        if filenameList[id] in matchedSourcesList:
+            ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#228822", wch_border_style='none', wch_textsize='10px')
+        else:
+            ChangeButtonStyle(f'({id+1}) {filenameList[id]}', "#AAAAAA", wch_border_style='none', wch_textsize='10px')
+
+    for questionId, followup_question in enumerate(st.session_state['followup_questions']):
+        if followup_question:
+            str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
+            ChangeButtonStyle(str_followup_question, "#5555FF", wch_border_style='none', wch_textsize='14px')
 
     if st.session_state['translation_language'] and st.session_state['translation_language'] != '':
         st.write(f"Translation to other languages, 翻译成其他语言, النص باللغة العربية")
