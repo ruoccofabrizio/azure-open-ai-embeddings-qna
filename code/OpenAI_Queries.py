@@ -65,6 +65,24 @@ def check_deployment():
         st.error(traceback.format_exc())
 
 
+def check_variables_in_prompt():
+    # Check if "summaries" is present in the string custom_prompt
+    if "{summaries}" not in st.session_state.custom_prompt:
+        st.warning("""Your custom prompt doesn't contain the variable "{summaries}".  
+        This variable is used to add the content of the documents retrieved from the VectorStore to the prompt.  
+        Please add it to your custom prompt to use the app.  
+        Reverting to default prompt.
+        """)
+        st.session_state.custom_prompt = ""
+    if "{question}" not in st.session_state.custom_prompt:
+        st.warning("""Your custom prompt doesn't contain the variable "{question}".  
+        This variable is used to add the user's question to the prompt.  
+        Please add it to your custom prompt to use the app.  
+        Reverting to default prompt.  
+        """)
+        st.session_state.custom_prompt = ""
+    
+
 @st.cache_data()
 def get_languages():
     return llm_helper.translator.get_available_languages()
@@ -83,6 +101,10 @@ try:
         st.session_state['response'] = default_answer
     if 'context' not in st.session_state:
         st.session_state['context'] = ""
+    if 'custom_prompt' not in st.session_state:
+        st.session_state['custom_prompt'] = ""
+    if 'custom_temperature' not in st.session_state:
+        st.session_state['custom_temperature'] = float(os.getenv("OPENAI_TEMPERATURE", 0.7))
 
     # Set page layout to wide screen and menu item
     menu_items = {
@@ -95,10 +117,20 @@ try:
     }
     st.set_page_config(layout="wide", menu_items=menu_items)
 
-    llm_helper = LLMHelper()
+    llm_helper = LLMHelper(custom_prompt=st.session_state.custom_prompt, temperature=st.session_state.custom_temperature)
 
     # Get available languages for translation
     available_languages = get_languages()
+
+    # Custom prompt variables
+    custom_prompt_placeholder = """{summaries}  
+    Please reply to the question using only the text above.  
+    Question: {question}  
+    Answer:"""
+    custom_prompt_help = """You can configure a custom prompt by adding the variables {summaries} and {question} to the prompt.  
+    {summaries} will be replaced with the content of the documents retrieved from the VectorStore.  
+    {question} will be replaced with the user's question.
+        """
 
     col1, col2, col3 = st.columns([1,2,1])
     with col1:
@@ -113,9 +145,9 @@ try:
             #     "OpenAI GPT-3 Model",
             #     [os.environ['OPENAI_ENGINE']]
             # )
-            # st.text_area("Prompt",height=100, key='prompt')
             # st.tokens_response = st.slider("Tokens response length", 100, 500, 400)
-            # st.temperature = st.slider("Temperature", 0.0, 1.0, 0.1)
+            st.slider("Temperature", min_value=0.0, max_value=1.0, step=0.1, key='custom_temperature')
+            st.text_area("Custom Prompt", key='custom_prompt', on_change=check_variables_in_prompt, placeholder= custom_prompt_placeholder,help=custom_prompt_help, height=150)
             st.selectbox("Language", [None] + list(available_languages.keys()), key='translation_language')
 
     question = st.text_input("OpenAI Semantic Answer", default_question)

@@ -13,6 +13,7 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT
+from langchain.prompts import PromptTemplate
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders import WebBaseLoader
 from langchain.text_splitter import TokenTextSplitter, TextSplitter
@@ -40,6 +41,7 @@ class LLMHelper:
         llm: AzureOpenAI = None,
         temperature: float = None,
         max_tokens: int = None,
+        custom_prompt: str = "",
         vector_store: VectorStore = None,
         k: int = None,
         pdf_parser: AzureFormRecognizerClient = None,
@@ -62,6 +64,8 @@ class LLMHelper:
         self.deployment_type: str = os.getenv("OPENAI_DEPLOYMENT_TYPE", "Text")
         self.temperature: float = float(os.getenv("OPENAI_TEMPERATURE", 0.7)) if temperature is None else temperature
         self.max_tokens: int = int(os.getenv("OPENAI_MAX_TOKENS", -1)) if max_tokens is None else max_tokens
+        self.prompt = PROMPT if custom_prompt == '' else PromptTemplate(template=custom_prompt, input_variables=["summaries", "question"])
+
 
         # Vector store settings
         self.vector_store_address: str = os.getenv('REDIS_ADDRESS', "localhost")
@@ -157,7 +161,7 @@ class LLMHelper:
 
     def get_semantic_answer_lang_chain(self, question, chat_history):
         question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
-        doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=False, prompt=PROMPT)
+        doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=True, prompt=self.prompt)
         chain = ConversationalRetrievalChain(
             retriever=self.vector_store.as_retriever(),
             question_generator=question_generator,
