@@ -116,6 +116,8 @@ class LLMHelper:
             pattern = re.compile(r'[\x00-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')
             for(doc) in docs:
                 doc.page_content = re.sub(pattern, '', doc.page_content)
+                if doc.page_content == '':
+                    docs.remove(doc)
             
             keys = []
             for i, doc in enumerate(docs):
