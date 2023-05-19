@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azure-openai-front-01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: azure-openai-front-01
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5 
+  template:
+    metadata:
+      labels:
+        app: azure-openai-front-01
+    spec:
+      containers:
+        - name: web
+          image: openai.azurecr.cn/oai-embeddings:latest
+          ports:
+            - containerPort: 8088
+          envFrom:
+            - configMapRef:
+                name: env-configmap
+        - name: batch
+          image: fruocco/oai-batch:latest
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: env-configmap
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: azure-openai-front-01
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8088
+    targetPort: 8088
+  selector:
+    app: azure-openai-front-01
