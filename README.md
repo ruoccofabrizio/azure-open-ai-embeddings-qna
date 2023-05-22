@@ -188,7 +188,7 @@ docker build . -f WebApp.Dockerfile -t your_docker_registry/your_docker_image:yo
 docker push your_docker_registry/your_docker_image:your_tag
 ```
 
-...K8S part
+```K8S part
 generate  a configmap file based on the  `.env` as described in as described in [Environment variables](#environment-variables)
 kubectl apply -f myconfigmap.yml
 #update the all-in-one.yml file to use own docker containers.
