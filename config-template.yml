@@ -17,6 +17,7 @@ data:
   REDIS_PASSWORD: redis-stack-password
   BLOB_ACCOUNT_NAME: storage4openai
   BLOB_ACCOUNT_KEY: "[update to your key]"
+  BLOB_ENDPOINT_SUFFIX: "core.windows.net"
   BLOB_CONTAINER_NAME: embedding
   QUEUE_NAME: doc-processing
   FORM_RECOGNIZER_ENDPOINT: "https://formreader.cognitiveservices.azure.cn/"
