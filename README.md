@@ -181,17 +181,19 @@ Note: You can use
 ```code (already updated for this Azure china branch)
 1) For WebApp.Dockerfile, update the exposed port from 80 to 8088. since 80 is already used by the batch service. since batch and web containers will be in the same pod. they can't use the same exposed port. (in my example, they can't, and I am some douting for the difference between pod and host when using docker-compose, which docker-compose can support since it can map container port to different host port)
 2) code\utilities\azureblobstorage.py, go to line 13, update the EndpointSuffix=core.chinacloudapi.cn
+```
 
 ```console
 docker build . -f WebApp.Dockerfile -t your_docker_registry/your_docker_image:your_tag
 docker push your_docker_registry/your_docker_image:your_tag
+```
 
 ...K8S part
 generate  a configmap file based on the  `.env` as described in as described in [Environment variables](#environment-variables)
 kubectl apply -f myconfigmap.yml
 #update the all-in-one.yml file to use own docker containers.
 kubectl apply -f all-in-one.yml
-
+```
 ## Environment variables
 
 Here is the explanation of the parameters:
