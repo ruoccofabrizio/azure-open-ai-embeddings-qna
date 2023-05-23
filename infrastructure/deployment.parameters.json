@@ -1,0 +1,78 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "ResourcePrefix": {
+            "value": "mcai2" // TODO: Fill in parameter value
+        },
+        "ContainerName": {
+            "value": "redis"
+        },
+        "DNSNameLabel": {
+            "value": "" // TODO: Fill in parameter value
+        },
+        "RedisPassword": {
+            "value": "redis"
+        },
+        "HostingPlanName": {
+            "value": "" // TODO: Fill in parameter value
+        },
+        "HostingPlanSku": {
+            "value": "B3"
+        },
+        "StorageAccountName": {
+            "value": "" // TODO: Fill in parameter value
+        },
+        "WebsiteName": {
+            "value": "" // TODO: Fill in parameter value
+        },
+        "FunctionName": {
+            "value": "" // TODO: Fill in parameter value
+        },
+        "ApplicationInsightsName": {
+            "value": "" // TODO: Fill in parameter value
+        },
+        "OpenAIName": {
+            "value": "mcopenaidev" // TODO: Fill in parameter value
+        },
+        "OpenAIKey": {
+            "value": "cb28f203983140bbaeb7b1da68f20b5f"
+        },
+        "OpenAIEngine": {
+            "value": "text-davinci-003"
+        },
+        "OpenAIDeploymentType": {
+            "value": "Text"
+        },
+        "OpenAIEmbeddingsEngineDoc": {
+            "value": "text-embedding-ada-002"
+        },
+        "OpenAIEmbeddingsEngineQuery": {
+            "value": "text-embedding-ada-002"
+        },
+        "OpenAITemperature": {
+            "value": "0.7"
+        },
+        "OpenAIMaxTokens": {
+            "value": "-1"
+        },
+        "FormRecognizerEndpoint": {
+            "value": "https://fr-feedspeed-dev.cognitiveservices.azure.com/" // TODO: Fill in parameter value
+        },
+        "FormRecognizerKey": {
+            "value": "5a0f74c311f145eb920605b4912b311f" // TODO: Fill in parameter value
+        },
+        "TranslateEndpoint": {
+            "value": "https://translator-feedspeed-dev.cognitiveservices.azure.com/" // TODO: Fill in parameter value
+        },
+        "TranslateKey": {
+            "value": "3e4b562e5e7247459cdf3b75d6a91d52" // TODO: Fill in parameter value
+        },
+        "TranslateRegion": {
+            "value": "eastus" // TODO: Fill in parameter value
+        },
+        "newGuid": {
+            "value": "" // TODO: Fill in parameter value
+        }
+    }
+}
