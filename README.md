@@ -19,6 +19,7 @@ If you want to use a Chat based deployment (gpt-35-turbo or gpt-4-32k or gpt-4),
 
 # Running this repo
 You have multiple options to run the code:
+-   [Deploy on Azure (WebApp + Batch Processing) with Azure Cognitive Search](#deploy-on-azure-webapp--batch-processing-with-azure-cognitive-search)
 -   [Deploy on Azure (WebApp + Azure Cache for Redis + Batch Processing)](#deploy-on-azure-webapp--azure-cache-for-redis-enterprise--batch-processing)
 -   [Deploy on Azure (WebApp + Redis Stack + Batch Processing)](#deploy-on-azure-webapp--redis-stack--batch-processing)
 -   [Run everything locally in Docker (WebApp + Redis Stack + Batch Processing)](#run-everything-locally-in-docker-webapp--redis-stack--batch-processing)
@@ -26,10 +27,28 @@ You have multiple options to run the code:
 -   [Run everything locally in Python with venv](#run-everything-locally-in-python-with-venv)
 -   [Run WebApp locally in Docker against an existing Redis deployment](#run-webapp-locally-in-docker-against-an-existing-redis-deployment)
 
+## Deploy on Azure (WebApp + Batch Processing) with Azure Cognitive Search
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment_ACS.json)
+
+Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
+
+![Architecture](docs/architecture_acs.png)
+
+Please be aware that you need:
+-   an existing Azure OpenAI resource with models deployments (instruction models e.g. text-davinci-003, and embeddings models e.g. text-embedding-ada-002)
+
+### Signing up for Vector Search Private Preview in Azure Cognitive Search
+Azure Cognitive Search supports searching using pure vectors, pure text, or in hybrid mode where both are combined. For the vector-based cases, you'll need to sign up for Vector Search Private Preview. To sign up, please fill in this form: [https://aka.ms/VectorSearchSignUp](https://aka.ms/VectorSearchSignUp).
+
+Preview functionality is provided under [Supplemental Terms of Use](https://azure.microsoft.com/en-us/support/legal/preview-supplemental-terms/), without a service level agreement, and isn't recommended for production workloads.
+
+
 ## Deploy on Azure (WebApp + Azure Cache for Redis Enterprise + Batch Processing)
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2FdeploymentACRE.json)
 
 Click on the Deploy to Azure button to automatically deploy a template on Azure by with the resources needed to run this example. This option will provision an instance of [Azure Cache for Redis](https://learn.microsoft.com/azure/azure-cache-for-redis/cache-overview) with [RediSearch](https://learn.microsoft.com/azure/azure-cache-for-redis/cache-redis-modules#redisearch) installed to store vectors and perform the similiarity search. 
+
+![Architecture](docs/architecture_acre.png)
 
 Please be aware that you still need:
 -   an existing Azure OpenAI resource with models deployments (instruction models e.g. `text-davinci-003`, and embeddings models e.g. `text-embedding-ada-002`) 
@@ -43,6 +62,8 @@ You will add the endpoint and access key information for these resources when de
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment.json)
 
 Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
+
+![Architecture](docs/architecture_redis.png)
 
 Please be aware that you need:
 -   an existing Azure OpenAI resource with models deployments (instruction models e.g. `text-davinci-003`, and embeddings models e.g. `text-embedding-ada-002`) 
@@ -184,6 +205,9 @@ Here is the explanation of the parameters:
 |OPENAI_API_KEY| YOUR_AZURE_OPENAI_KEY | Your Azure OpenAI API Key. Get it in the [Azure Portal](https://portal.azure.com)|
 |OPENAI_TEMPERATURE|0.7| Azure OpenAI Temperature |
 |OPENAI_MAX_TOKENS|-1| Azure OpenAI Max Tokens |
+|VECTOR_STORE_TYPE| AzureSearch | Vector Store Type. Use AzureSearch for Azure Cognitive Search, leave it blank for Redis or Azure Cache for Redis Enterprise|
+|AZURE_SEARCH_SERVICE_NAME| YOUR_AZURE_SEARCH_SERVICE_URL | Your Azure Cognitive Search service name. Get it in the [Azure Portal](https://portal.azure.com)|
+|AZURE_SEARCH_ADMIN_KEY| AZURE_SEARCH_ADMIN_KEY | Your Azure Cognitive Search Admin key. Get it in the [Azure Portal](https://portal.azure.com)|
 |REDIS_ADDRESS| api | URL for Redis Stack: "api" for docker compose|
 |REDIS_PORT | 6379 | Port for Redis |
 |REDIS_PASSWORD| redis-stack-password | OPTIONAL - Password for your Redis Stack|

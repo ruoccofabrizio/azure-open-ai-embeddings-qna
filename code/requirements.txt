@@ -19,3 +19,5 @@ beautifulsoup4==4.12.0
 streamlit-chat==0.0.2.2
 fake-useragent==1.1.3
 chardet==5.1.0
+--extra-index-url https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/
+azure-search-documents==11.4.0a20230509004
