@@ -4,12 +4,17 @@ import traceback
 from utilities.helper import LLMHelper
 
 def delete_embedding():
-    llm_helper.vector_store.delete_keys([f"doc:{st.session_state['embedding_to_drop']}"])
+    llm_helper.vector_store.delete_keys([f"{st.session_state['embedding_to_drop']}"])
 
 def delete_file():
     embeddings_to_delete = data[data.filename == st.session_state['file_to_drop']].key.tolist()
-    embeddings_to_delete = list(map(lambda x: f"doc:{x}", embeddings_to_delete))
+    embeddings_to_delete = list(map(lambda x: f"{x}", embeddings_to_delete))
     llm_helper.vector_store.delete_keys(embeddings_to_delete)
+
+def delete_all():
+    embeddings_to_delete = data.key.tolist()
+    embeddings_to_delete = list(map(lambda x: f"{x}", embeddings_to_delete))
+    llm_helper.vector_store.delete_keys(embeddings_to_delete)   
 
 try:
     # Set page layout to wide screen and menu item
@@ -53,7 +58,7 @@ try:
 
         st.text("")
         st.text("")
-        st.button("Delete all embeddings", on_click=llm_helper.vector_store.delete_keys_pattern, args=("doc*",), type="secondary")
+        st.button("Delete all embeddings", on_click=delete_all, type="secondary")
 
 except Exception as e:
     st.error(traceback.format_exc())

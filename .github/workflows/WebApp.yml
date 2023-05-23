@@ -27,3 +27,7 @@ jobs:
         docker push fruocco/oai-embeddings:$(date +'%Y-%m-%d')_$GITHUB_RUN_NUMBER;
         docker push fruocco/oai-embeddings:latest;
         
+        docker build . --file BatchProcess.Dockerfile --tag fruocco/oai-batch:$(date +'%Y-%m-%d')_$GITHUB_RUN_NUMBER;
+        docker tag fruocco/oai-batchs:$(date +'%Y-%m-%d')_$GITHUB_RUN_NUMBER fruocco/oai-batch:latest;
+        docker push fruocco/oai-batch:$(date +'%Y-%m-%d')_$GITHUB_RUN_NUMBER;
+        docker push fruocco/oai-batch:latest;

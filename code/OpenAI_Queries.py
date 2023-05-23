@@ -49,14 +49,25 @@ def check_deployment():
     #\ 4. Check if the Redis is working with previous version of data
     try:
         llm_helper = LLMHelper()
-        if llm_helper.vector_store.check_existing_index("embeddings-index"):
-            st.warning("""Seems like you're using a Redis with an old data structure.  
-            If you want to use the new data structure, you can start using the app and go to "Add Document" -> "Add documents in Batch" and click on "Convert all files and add embeddings" to reprocess your documents.  
-            To remove this working, please delete the index "embeddings-index" from your Redis.  
-            If you prefer to use the old data structure, please change your Web App container image to point to the docker image: fruocco/oai-embeddings:2023-03-27_25. 
-            """)
+        if llm_helper.vector_store_type != "AzureSearch":
+            if llm_helper.vector_store.check_existing_index("embeddings-index"):
+                st.warning("""Seems like you're using a Redis with an old data structure.  
+                If you want to use the new data structure, you can start using the app and go to "Add Document" -> "Add documents in Batch" and click on "Convert all files and add embeddings" to reprocess your documents.  
+                To remove this working, please delete the index "embeddings-index" from your Redis.  
+                If you prefer to use the old data structure, please change your Web App container image to point to the docker image: fruocco/oai-embeddings:2023-03-27_25. 
+                """)
+            else:
+                st.success("Redis is working!")
         else:
-            st.success("Redis is working!")
+            try:
+                llm_helper.vector_store.index_exists()
+                st.success("Azure Cognitive Search is working!")
+            except Exception as e:
+                st.error("""Azure Cognitive Search is not working.  
+                    Please check your Azure Cognitive Search service name and service key in the App Settings.  
+                    Then restart your application.  
+                    """)
+                st.error(traceback.format_exc())
     except Exception as e:
         st.error(f"""Redis is not working. 
             Please check your Redis connection string in the App Settings.  
