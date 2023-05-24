@@ -5,6 +5,9 @@ A simple web application for a OpenAI-enabled document search. This repo uses Az
 ![Architecture](docs/architecture.png)
 
 # IMPORTANT NOTE (OpenAI generated)
+1) We did some changes to make it work in Azure china, which is also named 21v Azure. because the OpenAI service, all other related service are available in Azure China. so we can deply the Apps to Azure china, it will call the OpenAI servicec hosted in Global Azure.
+2) To make it more simply, we generate the K8S file, in includes the configmap/deployment/service yaml. for the original .env file, we generated a similar configmap file to save all the config colume, then te deplyment yaml fill will use it.  
+
 We have made some changes to the data format in the latest update of this repo. 
 <br>The new format is more efficient and compatible with the latest standards and libraries. However, we understand that some of you may have existing applications that rely on the previous format and may not be able to migrate to the new one immediately.
 
@@ -26,6 +29,7 @@ You have multiple options to run the code:
 -   [Run everything locally in Python with Conda (WebApp only)](#run-everything-locally-in-python-with-conda-webapp-only)
 -   [Run everything locally in Python with venv](#run-everything-locally-in-python-with-venv)
 -   [Run WebApp locally in Docker against an existing Redis deployment](#run-webapp-locally-in-docker-against-an-existing-redis-deployment)
+-   [Run WebApp locally in K8S against an existing Redis deployment](#run-webapp-locally-in-K8S-against-an-existing-redis-deployment)
 
 ## Deploy on Azure (WebApp + Batch Processing) with Azure Cognitive Search
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment_ACS.json)
@@ -190,7 +194,27 @@ docker run --env-file .env -p 8080:80 your_docker_registry/your_docker_image:you
 Note: You can use 
 -   WebApp.Dockerfile to build the Web Application
 -   BatchProcess.Dockerfile to build the Azure Function for Batch Processing
+-   
+## Run WebApp locally in K8S against an existing Redis deployment
 
+### needed - Build the Docker image yourself, since we upate the code to cordinate with the Azure China blob endpoinsts. (only needed when you use Azure China)
+
+```code (already updated for this Azure china branch)
+1) For WebApp.Dockerfile, update the exposed port from 80 to 8088. since 80 is already used by the batch service. since batch and web containers will be in the same pod. they can't use the same exposed port. (in my example, they can't, and I am some douting for the difference between pod and host when using docker-compose, which docker-compose can support since it can map container port to different host port)
+2) code\utilities\azureblobstorage.py, go to line 13, update the EndpointSuffix=core.chinacloudapi.cn
+```
+
+```console
+docker build . -f WebApp.Dockerfile -t your_docker_registry/your_docker_image:your_tag
+docker push your_docker_registry/your_docker_image:your_tag
+```
+
+```K8S part
+generate  a configmap file based on the  `.env` as described in as described in [Environment variables](#environment-variables)
+kubectl apply -f myconfigmap.yml
+#update the all-in-one.yml file to use own docker containers.
+kubectl apply -f all-in-one.yml
+```
 ## Environment variables
 
 Here is the explanation of the parameters:

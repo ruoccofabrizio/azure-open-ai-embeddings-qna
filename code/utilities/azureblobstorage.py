@@ -4,13 +4,17 @@ from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, g
 from dotenv import load_dotenv
 
 class AzureBlobStorageClient:
-    def __init__(self, account_name: str = None, account_key: str = None, container_name: str = None):
+    def __init__(self, account_name: str = None, account_key: str = None, blob_endPoint_suffix: str = None, container_name: str = None):
 
         load_dotenv()
 
         self.account_name : str = account_name if account_name else os.getenv('BLOB_ACCOUNT_NAME')
         self.account_key : str = account_key if account_key else os.getenv('BLOB_ACCOUNT_KEY')
-        self.connect_str : str = f"DefaultEndpointsProtocol=https;AccountName={self.account_name};AccountKey={self.account_key};EndpointSuffix=core.windows.net"
+        self.blob_endPoint_suffix : str = blob_endPoint_suffix if blob_endPoint_suffix else os.getenv('BLOB_ENDPOINT_SUFFIX')
+        # comment and update it to support both global azure and Azure China, they are of different blob end point suffix.
+        # self.connect_str : str = f"DefaultEndpointsProtocol=https;AccountName={self.account_name};AccountKey={self.account_key};EndpointSuffix=core.chinacloudapi.cn"
+        self.connect_str : str = f"DefaultEndpointsProtocol=https;AccountName={self.account_name};AccountKey={self.account_key};EndpointSuffix={blob_endPoint_suffix}"
+       
         self.container_name : str = container_name if container_name else os.getenv('BLOB_CONTAINER_NAME')
         self.blob_service_client : BlobServiceClient = BlobServiceClient.from_connection_string(self.connect_str)
 
