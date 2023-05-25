@@ -377,6 +377,22 @@
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('StorageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
             },
             {
+              "name": "OPENAI_ENGINE",
+              "value": "[parameters('OpenAIEngine')]"
+            },
+            {
+              "name": "OPENAI_DEPLOYMENT_TYPE",
+              "value": "[parameters('OpenAIDeploymentType')]"
+            },            
+            {
+              "name": "OPENAI_EMBEDDINGS_ENGINE_DOC",
+              "value": "[parameters('OpenAIEmbeddingsEngineDoc')]"
+            },           
+            {
+              "name": "OPENAI_EMBEDDINGS_ENGINE_QUERY",
+              "value": "[parameters('OpenAIEmbeddingsEngineQuery')]"
+            },
+            {
               "name": "OPENAI_API_BASE",
               "value": "[parameters('OpenAIEndpoint')]"
             },
