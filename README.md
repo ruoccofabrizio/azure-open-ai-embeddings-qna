@@ -191,6 +191,58 @@ Note: You can use
 -   WebApp.Dockerfile to build the Web Application
 -   BatchProcess.Dockerfile to build the Azure Function for Batch Processing
 
+## Use the QnA API from the backend
+You can use a QnA API on your data exposed by the Azure Function for Batch Processing. 
+
+```python
+POST https://YOUR_BATCH_PROCESS_AZURE_FUNCTION_URL/api/apiQnA
+Body:
+    question: str
+    history: (str,str) -- OPTIONAL
+    custom_prompt: str -- OPTIONAL
+    custom_temperature: float --OPTIONAL
+
+Return:
+{'context': 'Introduction to Azure Cognitive Search - Azure Cognitive Search '
+            '(formerly known as "Azure Search") is a cloud search service that '
+            'gives developers infrastructure, APIs, and tools for building a '
+            'rich search experience over private, heterogeneous content in '
+            'web, mobile, and enterprise applications...'
+            '...'
+            '...',
+
+ 'question': 'What is ACS?',
+
+ 'response': 'ACS stands for Azure Cognitive Search, which is a cloud search service'
+             'that provides infrastructure, APIs, and tools for building a rich search experience'
+             'over private, heterogeneous content in web, mobile, and enterprise applications...'
+             '...'
+             '...',
+             
+ 'sources': '[https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search](https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search)'}
+```
+
+### Call the API with no history for QnA mode
+```python
+import requests
+
+r = requests.post('http://http://YOUR_BATCH_PROCESS_AZURE_FUNCTION_URL/api/apiQnA', json={
+    'question': 'What is the capital of Italy?'
+    })
+
+```
+### Call the API with history for Chat mode
+```python
+r = requests.post('http://YOUR_BATCH_PROCESS_AZURE_FUNCTION_URL/api/apiQnA', json={
+    'question': 'can I use python SDK?',
+    'history': [
+        ("what's ACS?", 
+        'ACS stands for Azure Cognitive Search, which is a cloud search service that provides infrastructure, APIs, and tools for building a rich search experience over private, heterogeneous content in web, mobile, and enterprise applications. It includes a search engine for full-text search, rich indexing with lexical analysis and AI enrichment for content extraction and transformation, rich query syntax for text search, fuzzy search, autocomplete, geo-search, and more. ACS can be created, loaded, and queried using the portal, REST API, .NET SDK, or another SDK. It also includes data integration at the indexing layer, AI and machine learning integration with Azure Cognitive Services, and security integration with Azure Active Directory and Azure Private Link integration.'
+        )
+        ]
+    })
+```
+
 ## Environment variables
 
 Here is the explanation of the parameters:
