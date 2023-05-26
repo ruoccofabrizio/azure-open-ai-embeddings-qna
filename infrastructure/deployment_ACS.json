@@ -364,10 +364,6 @@
               "value": "[parameters('OpenAIKey')]"
             },
             {
-              "name": "OPENAI_EMBEDDINGS_ENGINE_DOC",
-              "value": "[parameters('OpenAIEmbeddingsEngineDoc')]"
-            },
-            {
               "name": "BLOB_ACCOUNT_NAME",
               "value": "[parameters('StorageAccountName')]"
             },
