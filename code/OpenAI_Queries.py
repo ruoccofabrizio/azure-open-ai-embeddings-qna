@@ -6,6 +6,10 @@ import os
 import traceback
 from utilities.helper import LLMHelper
 
+import streamlit.components.v1 as components
+import requests
+import regex as re
+
 import logging
 logger = logging.getLogger('azure.core.pipeline.policies.http_logging_policy').setLevel(logging.WARNING)
 
@@ -117,6 +121,24 @@ try:
     if 'custom_temperature' not in st.session_state:
         st.session_state['custom_temperature'] = float(os.getenv("OPENAI_TEMPERATURE", 0.7))
 
+    if 'sources' not in st.session_state:
+        st.session_state['sources'] = ""
+    if 'followup_questions' not in st.session_state:
+        st.session_state['followup_questions'] = []
+    if 'input_message_key' not in st.session_state:
+        st.session_state ['input_message_key'] = 1
+    if 'do_not_process_question' not in st.session_state:
+        st.session_state['do_not_process_question'] = False
+    if 'askedquestion' not in st.session_state:
+        st.session_state.askedquestion = default_question
+    if 'context_show_option' not in st.session_state:
+        st.session_state['context_show_option'] = 'context within full source document'
+    if 'tab_context' not in st.session_state:
+        st.session_state['tab_context'] = 'Not opened yet'
+    else:
+        if st.session_state['question'] != '' and st.session_state['tab_context'] != 'Not opened yet' and st.session_state['tab_context'] != 'Chat':
+            st.session_state['tab_context'] = 'Open_Queries'
+
     # Set page layout to wide screen and menu item
     menu_items = {
 	'Get help': None,
@@ -161,16 +183,143 @@ try:
             st.text_area("Custom Prompt", key='custom_prompt', on_change=check_variables_in_prompt, placeholder= custom_prompt_placeholder,help=custom_prompt_help, height=150)
             st.selectbox("Language", [None] + list(available_languages.keys()), key='translation_language')
 
-    question = st.text_input("OpenAI Semantic Answer", default_question)
+    # Callback to display document sources
+    def show_document_source(filename, link, contextList):
+        st.session_state['do_not_process_question'] = True
+        display_iframe(filename, link, contextList)
+        st.text("")
+        st.text("")
 
-    if question != '':
-        st.session_state['question'] = question
-        st.session_state['question'], st.session_state['response'], st.session_state['context'], sources = llm_helper.get_semantic_answer_lang_chain(question, [])
-        st.markdown("Answer:" + st.session_state['response'])
-        st.markdown(f'\n\nSources: {sources}') 
+    # Callback to assign the follow-up question is selected by the user
+    def ask_followup_question(followup_question):
+        st.session_state.askedquestion = followup_question
+        st.session_state['input_message_key'] = st.session_state['input_message_key'] + 1
+
+    def questionAsked():
+        st.session_state.askedquestion = st.session_state["input"+str(st.session_state ['input_message_key'])]
+
+    question = st.text_input("Azure OpenAI Semantic Answer", value=st.session_state['askedquestion'], key="input"+str(st.session_state ['input_message_key']), on_change=questionAsked)
+
+    # Display the context(s) associated with a source document used to andwer, with automaic scroll to the yellow highlighted context
+    def display_iframe(filename, link, contextList):
+        st.session_state['do_not_process_question'] = True
+        st.session_state['askedquestion'] = st.session_state.question
+        if st.session_state['context_show_option'] == 'context within full source document':
+            try:
+                response = requests.get(link)
+                text = response.text
+                text = llm_helper.clean_encoding(text)
+                for i, context in enumerate(contextList):
+                    context = llm_helper.clean_encoding(context)
+                    contextSpan = f" <span id='ContextTag{i}' style='background-color: yellow; color: black'><b>{context}</b></span>"
+                    text = text.replace(context, contextSpan)
+                text = text.replace('\n', '<br><br>')
+
+            except Exception as e:
+                text = "Could not load the document source content"
+        else:
+            text = ""
+            for context in contextList:
+                text = text + context.replace('\n', '<br><br>') + '<br>'
+
+        html_content = """
+        <!DOCTYPE html>
+        <head>
+        </head>
+        <body>
+            <div id='{filename}'>
+            {text}
+            </div>
+            <script>
+            window.onload = function() {{
+            var body = this.document.querySelector('body');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let textColor = '#222222';
+            if (prefersDark) {{ textColor = '#EEEEEE'; }}
+            body.style.color = textColor;
+            setTimeout(function() {{
+                // Code to execute after 2 seconds
+                var element = this.document.querySelector('body div span#ContextTag0');
+                if (element !== null) {{
+                    element.scrollIntoView({{
+                    behavior: 'smooth',
+                    }});
+                }}
+            }}, 2000);
+            }};
+            </script>
+        </body>
+        """
+
+        def close_iframe():
+            placeholder.empty()
+            st.session_state['do_not_process_question'] = True
+
+        st.button("Close", on_click=close_iframe)
+        
+        placeholder = st.empty()
+        with placeholder:
+            htmlcontent = html_content.format(filename=filename, text=text)
+            components.html(htmlcontent, height=500, scrolling=True)
+
+        pass
+
+    if st.session_state['tab_context'] != 'Open_Queries' and st.session_state['question'] != '' and st.session_state['question'] != st.session_state['followup_questions']:
+        st.session_state['tab_context'] = 'Open_Queries'
+        st.session_state['do_not_process_question'] = True
+        ask_followup_question(st.session_state['question'])
+
+    # Answer the question if any
+    if st.session_state.askedquestion != '' and st.session_state['do_not_process_question'] != True:
+        st.session_state['question'] = st.session_state.askedquestion
+        st.session_state.askedquestion = ""
+        st.session_state['question'], \
+        st.session_state['response'], \
+        st.session_state['context'], \
+        st.session_state['sources'] = llm_helper.get_semantic_answer_lang_chain(st.session_state['question'], [])
+        st.session_state['response'], followup_questions_list = llm_helper.extract_followupquestions(st.session_state['response'])
+        st.session_state['followup_questions'] = followup_questions_list
+
+    st.session_state['do_not_process_question'] = False
+    sourceList = []
+
+    # Display the sources and context - even if the page is reloaded
+    if st.session_state['sources'] or st.session_state['context']:
+        st.session_state['response'], sourceList, matchedSourcesList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['response'], st.session_state['sources'])
+        st.write("<br>", unsafe_allow_html=True)
+        st.markdown("**Answer:**" + st.session_state['response'])
+ 
+    # Display proposed follow-up questions which can be clicked on to ask that question automatically
+    if len(st.session_state['followup_questions']) > 0:
+        st.write("<br>", unsafe_allow_html=True)
+        st.markdown('**Proposed follow-up questions:**')
+    with st.container():
+        for questionId, followup_question in enumerate(st.session_state['followup_questions']):
+            if followup_question:
+                str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
+                st.button(str_followup_question, key=1000+questionId, on_click=ask_followup_question, args=(followup_question, ))
+
+    if st.session_state['sources'] or st.session_state['context']:
+        # Buttons to display the context used to answer
+        st.write("<br>", unsafe_allow_html=True)
+        st.markdown('**Document sources:**')
+        for id in range(len(sourceList)):
+            st.button(f'({id+1}) {filenameList[id]}', key=f'{filenameList[id]}_{id}', on_click=show_document_source, args=(filenameList[id], linkList[id], st.session_state['context'][sourceList[id]], ))
+
+        # Details on the question and answer context
+        st.write("<br><br>", unsafe_allow_html=True)
         with st.expander("Question and Answer Context"):
-            st.markdown(st.session_state['context'].replace('$', '\$'))
-            st.markdown(f"SOURCES: {sources}") 
+            if not st.session_state['context'] is None and st.session_state['context'] != []:
+                for content_source in st.session_state['context'].keys():
+                    st.markdown(f"#### {content_source}")
+                    for context_text in st.session_state['context'][content_source]:
+                        st.markdown(f"{context_text}")
+
+            st.markdown(f"SOURCES: {st.session_state['sources']}") 
+
+    for questionId, followup_question in enumerate(st.session_state['followup_questions']):
+        if followup_question:
+            str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
 
     if st.session_state['translation_language'] and st.session_state['translation_language'] != '':
         st.write(f"Translation to other languages, 翻译成其他语言, النص باللغة العربية")
