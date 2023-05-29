@@ -226,28 +226,6 @@ class LLMHelper:
         else:
             return self.llm(prompt)
 
-    def convert_file_and_add_embeddings_v2(self, source_url, filename, enable_translation=False):
-        # Extract the text from the file
-        text, html_content, toc = self.pdf_parser.get_content_from_file_or_url(source_url)
-        # Translate if requested
-        converted_text = list(map(lambda x: self.translator.translate(x), text)) if self.enable_translation else text
-
-        # Upload the text to Azure Blob Storage
-        # converted_text = "\n".join(text)
-        # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
-        pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')  # do not remove \x0a (\n) nor \x0d (\r)
-        converted_text = re.sub(pattern, '', "n".join(converted_text))
-        converted_filename = f"converted/{filename}.txt"
-        source_url = self.blob_client.upload_file(converted_text, f"converted/{filename}.txt", content_type='text/plain; charset=utf-8')
-
-        print(f"Converted file uploaded to {source_url} with filename {filename}")
-        # Update the metadata to indicate that the file has been converted
-        self.blob_client.upsert_blob_metadata(filename, {"converted": "true"})
-
-        self.add_embeddings_lc(source_url=source_url)
-
-        return converted_filename
-
     # remove paths from sources to only keep the filename
     def filter_sourcesLinks(self, sources):
         # use regex to replace all occurences of '[anypath/anypath/somefilename.xxx](the_link)' to '[somefilename](thelink)' in sources
