@@ -318,8 +318,8 @@ class LLMHelper:
     def clean_encoding(self, text):
         try:
             encoding = 'ISO-8859-1'
-            reencodedtext = text.encode(encoding)
-            reencodedtext = reencodedtext.decode('utf-8')
+            encodedtext = text.encode(encoding)
+            encodedtext = encodedtext.decode('utf-8')
         except Exception as e:
-            reencodedtext = text
-        return reencodedtext
+            encodedtext = text
+        return encodedtext
