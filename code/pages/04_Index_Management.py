@@ -9,20 +9,21 @@ def delete_embedding():
         del st.session_state['data_embeddings'] 
 
 def delete_file_embeddings():
-    if st.session_state['data_embeddings'].shape[0] == 0:
-        return
+    if st.session_state['data_embeddings'].shape[0] != 0:
+        file_to_delete = st.session_state['file_to_drop']
+        embeddings_to_delete = st.session_state['data_embeddings'][st.session_state['data_embeddings']['filename'] == file_to_delete]['key'].tolist()
+        embeddings_to_delete = list(map(lambda x: f"{x}", embeddings_to_delete))
+        if len(embeddings_to_delete) > 0:
+            llm_helper.vector_store.delete_keys(embeddings_to_delete)
+            # remove all embeddings lines for the filename from session state
+            st.session_state['data_embeddings'] = st.session_state['data_embeddings'].drop(st.session_state['data_embeddings'][st.session_state['data_embeddings']['filename'] == file_to_delete].index)
 
-    file_to_delete = st.session_state['file_to_drop']
-    embeddings_to_delete = st.session_state['data_embeddings'][st.session_state['data_embeddings']['filename'] == file_to_delete]['key'].tolist()
+def delete_all():
+    embeddings_to_delete = st.session_state['data_embeddings'].key.tolist()
     embeddings_to_delete = list(map(lambda x: f"{x}", embeddings_to_delete))
-    if len(embeddings_to_delete) > 0:
-        llm_helper.vector_store.delete_keys(embeddings_to_delete)
-        # remove all embeddings lines for the filename from session state
-        st.session_state['data_embeddings'] = st.session_state['data_embeddings'].drop(st.session_state['data_embeddings'][st.session_state['data_embeddings']['filename'] == file_to_delete].index)
+    llm_helper.vector_store.delete_keys(embeddings_to_delete)   
 
 
-def delete_all_embeddings(embeddings_to_delete):
-    llm_helper.vector_store.delete_keys_pattern(embeddings_to_delete)
 
 try:
     # Set page layout to wide screen and menu item
@@ -67,7 +68,7 @@ try:
 
         st.text("")
         st.text("")
-        st.button("Delete all embeddings", type="secondary", on_click=delete_all_embeddings, args=("doc*",))
+        st.button("Delete all embeddings", type="secondary", on_click=delete_all)
  
 except Exception as e:
     st.error(traceback.format_exc())
