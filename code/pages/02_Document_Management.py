@@ -3,6 +3,7 @@ import os
 import traceback
 from utilities.helper import LLMHelper
 import streamlit.components.v1 as components
+from urllib import parse
 
 def delete_embeddings_of_file(file_to_delete):
     # Query RediSearch to get all the embeddings - lazy loading
@@ -12,7 +13,7 @@ def delete_embeddings_of_file(file_to_delete):
     if st.session_state['data_files_embeddings'].shape[0] == 0:
         return
 
-    for converted_file_extension in ['.txt', '.html']:
+    for converted_file_extension in ['.txt']:
         file_to_delete = 'converted/' + file_to_delete + converted_file_extension
 
         embeddings_to_delete = st.session_state['data_files_embeddings'][st.session_state['data_files_embeddings']['filename'] == file_to_delete]['key'].tolist()
@@ -48,17 +49,9 @@ def delete_file_and_embeddings(filename=''):
             except Exception as e:
                 st.error(f"Error deleting file : {converted_file} - {e}")
 
-        # delete converted html file
-        if file_dict['converted']:
-            html_file = 'converted/' + file_dict['filename'] + '.html'
-            try:
-                llm_helper.blob_client.delete_file(html_file)
-            except Exception as e:
-                st.error(f"Error deleting file : {html_file} - {e}")
-
         # delete embeddings
         if file_dict['embeddings_added']:
-            delete_embeddings_of_file(filename)
+            delete_embeddings_of_file(parse.quote(filename))
     
     # update the list of filenames to remove the deleted filename
     st.session_state['data_files'] = [d for d in st.session_state['data_files'] if d['filename'] != '{filename}']
@@ -107,7 +100,7 @@ try:
         st.text("")
 
         filenames_list = [d['filename'] for d in st.session_state['data_files']]
-        st.selectbox("File to delete and their embeddings", filenames_list, key="file_and_embeddings_to_drop")
+        st.selectbox("Select filename to delete", filenames_list, key="file_and_embeddings_to_drop")
          
         st.text("")
         st.button("Delete file and its embeddings", on_click=delete_file_and_embeddings)
