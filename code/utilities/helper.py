@@ -184,7 +184,7 @@ class LLMHelper:
 
     def get_semantic_answer_lang_chain(self, question, chat_history):
         question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
-        doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=True, prompt=self.prompt)
+        doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=False, prompt=self.prompt)
         chain = ConversationalRetrievalChain(
             retriever=self.vector_store.as_retriever(),
             question_generator=question_generator,
@@ -258,6 +258,23 @@ class LLMHelper:
             followup_questions_list.append(followup_questions[match.start()+2:match.end()-2])
             followup_questions = followup_questions[match.end():]
             match = re.search(pattern, followup_questions)
+        
+        if followup_questions_list != '':
+            # Extract follow up question 
+            pattern = r'\d. (.*)'
+            match = re.search(pattern, followup_questions)
+            while match:
+                followup_questions_list.append(followup_questions[match.start()+3:match.end()])
+                followup_questions = followup_questions[match.end():]
+                match = re.search(pattern, followup_questions)
+
+        if followup_questions_list != '':
+            pattern = r'Follow-up Question: (.*)'
+            match = re.search(pattern, followup_questions)
+            while match:
+                followup_questions_list.append(followup_questions[match.start()+19:match.end()])
+                followup_questions = followup_questions[match.end():]
+                match = re.search(pattern, followup_questions)
         
         # Special case when 'Follow-up questions:' appears in the answer after the <<
         followupTag = answer_without_followupquestions.lower().find('follow-up questions')
