@@ -5,9 +5,6 @@ import streamlit as st
 import os
 import traceback
 from utilities.helper import LLMHelper
-
-import streamlit.components.v1 as components
-import requests
 import regex as re
 
 import logging
@@ -98,6 +95,14 @@ def check_variables_in_prompt():
         st.session_state.custom_prompt = ""
     
 
+ # Callback to assign the follow-up question is selected by the user
+def ask_followup_question(followup_question):
+    st.session_state.askedquestion = followup_question
+    st.session_state['input_message_key'] = st.session_state['input_message_key'] + 1
+
+def questionAsked():
+    st.session_state.askedquestion = st.session_state["input"+str(st.session_state ['input_message_key'])]
+
 @st.cache_data()
 def get_languages():
     return llm_helper.translator.get_available_languages()
@@ -110,8 +115,6 @@ try:
 
     if 'question' not in st.session_state:
         st.session_state['question'] = default_question
-    # if 'prompt' not in st.session_state:
-    #     st.session_state['prompt'] = os.getenv("QUESTION_PROMPT", "Please reply to the question using only the information present in the text above. If you can't find it, reply 'Not in the text'.\nQuestion: _QUESTION_\nAnswer:").replace(r'\n', '\n')
     if 'response' not in st.session_state:
         st.session_state['response'] = default_answer
     if 'context' not in st.session_state:
@@ -183,86 +186,8 @@ try:
             st.text_area("Custom Prompt", key='custom_prompt', on_change=check_variables_in_prompt, placeholder= custom_prompt_placeholder,help=custom_prompt_help, height=150)
             st.selectbox("Language", [None] + list(available_languages.keys()), key='translation_language')
 
-    # Callback to display document sources
-    def show_document_source(filename, link, contextList):
-        st.session_state['do_not_process_question'] = True
-        display_iframe(filename, link, contextList)
-        st.text("")
-        st.text("")
-
-    # Callback to assign the follow-up question is selected by the user
-    def ask_followup_question(followup_question):
-        st.session_state.askedquestion = followup_question
-        st.session_state['input_message_key'] = st.session_state['input_message_key'] + 1
-
-    def questionAsked():
-        st.session_state.askedquestion = st.session_state["input"+str(st.session_state ['input_message_key'])]
 
     question = st.text_input("Azure OpenAI Semantic Answer", value=st.session_state['askedquestion'], key="input"+str(st.session_state ['input_message_key']), on_change=questionAsked)
-
-    # Display the context(s) associated with a source document used to andwer, with automaic scroll to the yellow highlighted context
-    def display_iframe(filename, link, contextList):
-        st.session_state['do_not_process_question'] = True
-        st.session_state['askedquestion'] = st.session_state.question
-        if st.session_state['context_show_option'] == 'context within full source document':
-            try:
-                response = requests.get(link)
-                text = response.text
-                text = llm_helper.clean_encoding(text)
-                for i, context in enumerate(contextList):
-                    context = llm_helper.clean_encoding(context)
-                    contextSpan = f" <span id='ContextTag{i}' style='background-color: yellow; color: black'><b>{context}</b></span>"
-                    text = text.replace(context, contextSpan)
-                text = text.replace('\n', '<br><br>')
-
-            except Exception as e:
-                text = "Could not load the document source content"
-        else:
-            text = ""
-            for context in contextList:
-                text = text + context.replace('\n', '<br><br>') + '<br>'
-
-        html_content = """
-        <!DOCTYPE html>
-        <head>
-        </head>
-        <body>
-            <div id='{filename}'>
-            {text}
-            </div>
-            <script>
-            window.onload = function() {{
-            var body = this.document.querySelector('body');
-            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            let textColor = '#222222';
-            if (prefersDark) {{ textColor = '#EEEEEE'; }}
-            body.style.color = textColor;
-            setTimeout(function() {{
-                // Code to execute after 2 seconds
-                var element = this.document.querySelector('body div span#ContextTag0');
-                if (element !== null) {{
-                    element.scrollIntoView({{
-                    behavior: 'smooth',
-                    }});
-                }}
-            }}, 2000);
-            }};
-            </script>
-        </body>
-        """
-
-        def close_iframe():
-            placeholder.empty()
-            st.session_state['do_not_process_question'] = True
-
-        st.button("Close", on_click=close_iframe)
-        
-        placeholder = st.empty()
-        with placeholder:
-            htmlcontent = html_content.format(filename=filename, text=text)
-            components.html(htmlcontent, height=500, scrolling=True)
-
-        pass
 
     if st.session_state['tab_context'] != 'Open_Queries' and st.session_state['question'] != '' and st.session_state['question'] != st.session_state['followup_questions']:
         st.session_state['tab_context'] = 'Open_Queries'
@@ -287,7 +212,7 @@ try:
     if st.session_state['sources'] or st.session_state['context']:
         st.session_state['response'], sourceList, matchedSourcesList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['response'], st.session_state['sources'])
         st.write("<br>", unsafe_allow_html=True)
-        st.markdown("**Answer:**" + st.session_state['response'])
+        st.markdown("Answer: " + st.session_state['response'])
  
     # Display proposed follow-up questions which can be clicked on to ask that question automatically
     if len(st.session_state['followup_questions']) > 0:
@@ -304,7 +229,7 @@ try:
         st.write("<br>", unsafe_allow_html=True)
         st.markdown('**Document sources:**')
         for id in range(len(sourceList)):
-            st.button(f'({id+1}) {filenameList[id]}', key=f'{filenameList[id]}_{id}', on_click=show_document_source, args=(filenameList[id], linkList[id], st.session_state['context'][sourceList[id]], ))
+            st.markdown(f"[{id+1}] {sourceList[id]}")
 
         # Details on the question and answer context
         st.write("<br><br>", unsafe_allow_html=True)
