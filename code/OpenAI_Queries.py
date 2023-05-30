@@ -130,17 +130,8 @@ try:
         st.session_state['followup_questions'] = []
     if 'input_message_key' not in st.session_state:
         st.session_state ['input_message_key'] = 1
-    if 'do_not_process_question' not in st.session_state:
-        st.session_state['do_not_process_question'] = False
     if 'askedquestion' not in st.session_state:
         st.session_state.askedquestion = default_question
-    if 'context_show_option' not in st.session_state:
-        st.session_state['context_show_option'] = 'context within full source document'
-    if 'tab_context' not in st.session_state:
-        st.session_state['tab_context'] = 'Not opened yet'
-    else:
-        if st.session_state['question'] != '' and st.session_state['tab_context'] != 'Not opened yet' and st.session_state['tab_context'] != 'Chat':
-            st.session_state['tab_context'] = 'Open_Queries'
 
     # Set page layout to wide screen and menu item
     menu_items = {
@@ -189,13 +180,8 @@ try:
 
     question = st.text_input("Azure OpenAI Semantic Answer", value=st.session_state['askedquestion'], key="input"+str(st.session_state ['input_message_key']), on_change=questionAsked)
 
-    if st.session_state['tab_context'] != 'Open_Queries' and st.session_state['question'] != '' and st.session_state['question'] != st.session_state['followup_questions']:
-        st.session_state['tab_context'] = 'Open_Queries'
-        st.session_state['do_not_process_question'] = True
-        ask_followup_question(st.session_state['question'])
-
     # Answer the question if any
-    if st.session_state.askedquestion != '' and st.session_state['do_not_process_question'] != True:
+    if st.session_state.askedquestion != '':
         st.session_state['question'] = st.session_state.askedquestion
         st.session_state.askedquestion = ""
         st.session_state['question'], \
@@ -205,7 +191,6 @@ try:
         st.session_state['response'], followup_questions_list = llm_helper.extract_followupquestions(st.session_state['response'])
         st.session_state['followup_questions'] = followup_questions_list
 
-    st.session_state['do_not_process_question'] = False
     sourceList = []
 
     # Display the sources and context - even if the page is reloaded
