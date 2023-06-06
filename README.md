@@ -4,6 +4,19 @@ A simple web application for a OpenAI-enabled document search. This repo uses Az
 
 ![Architecture](docs/architecture.png)
 
+## Learning More about Enterprise QnA 
+
+Enterprise QnA is built on a pattern the AI community calls "Retrieval-Augmented Generation" (RAG). In addition to this repository having a reference architecture on how to implement this pattern on Azure, here are resources to familiarize yourself with the concepts in RAG, and samples to learn each underlying product's APIs:
+
+| Resource | Links	| Purpose| Highlights | 
+| ---- | ----	| ---- | ----------------- | 
+| Reference Architecture |	[GitHub](https://github.com/ruoccofabrizio/azure-open-ai-embeddings-qna) (This Repo) | 	Starter template for enterprise development.	- Easily deployable reference architecture following best practices. |  -  Frontend is Azure OpenAI chat orchestrated with Langchain. <br> - Composes Form Recognizer, Azure Search, Redis in an end-to-end design. <br>	- Supports working with Azure Search, Redis. |
+|  Educational Blog Post|	[Microsoft Blog](https://github.com/ruoccofabrizio/azure-open-ai-embeddings-qna), <br> [GitHub](https://github.com/Azure-Samples/azure-search-openai-demo/) |	Learn about the building blocks in a RAG solution.	| - Introduction to the key elements in a RAG architecture. <br> - Understand the role of vector search in RAG scenarios.<br> - See how Azure Search supports this pattern. <br> - Understand the role of prompts and orchestrator like Langchain. |
+| Azure OpenAI API Sample | [GitHub](https://github.com/microsoft/sample-app-aoai-chatGPT) |	Get started with Azure OpenAI features.	| - Sample code to make an interactive chat client as a web page.	- Helps you get started with latest Azure OpenAI APIs |
+| Business Process Automation Samples |	[GitHub](https://github.com/Azure/business-process-automation)| Showcase multiple BPA scenarios implemented with Form Recognizer and Azure services.	| - Consolidates in one repository multiple samples related to BPA and document understanding. <br> - Includes an end to end app, GUI to create and customize a pipeline to integrate multiple Azure Cognitive services. <br> -  Uses Azure OpenAI in for enterprise QnA, doc intelligence, and search. | 
+
+
+
 # IMPORTANT NOTE (OpenAI generated)
 We have made some changes to the data format in the latest update of this repo. 
 <br>The new format is more efficient and compatible with the latest standards and libraries. However, we understand that some of you may have existing applications that rely on the previous format and may not be able to migrate to the new one immediately.
