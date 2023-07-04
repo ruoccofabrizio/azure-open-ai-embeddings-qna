@@ -5,6 +5,7 @@ import streamlit as st
 import os
 import traceback
 from utilities.helper import LLMHelper
+import regex as re
 
 import logging
 logger = logging.getLogger('azure.core.pipeline.policies.http_logging_policy').setLevel(logging.WARNING)
@@ -94,6 +95,14 @@ def check_variables_in_prompt():
         st.session_state.custom_prompt = ""
     
 
+ # Callback to assign the follow-up question is selected by the user
+def ask_followup_question(followup_question):
+    st.session_state.askedquestion = followup_question
+    st.session_state['input_message_key'] = st.session_state['input_message_key'] + 1
+
+def questionAsked():
+    st.session_state.askedquestion = st.session_state["input"+str(st.session_state ['input_message_key'])]
+
 @st.cache_data()
 def get_languages():
     return llm_helper.translator.get_available_languages()
@@ -106,8 +115,6 @@ try:
 
     if 'question' not in st.session_state:
         st.session_state['question'] = default_question
-    # if 'prompt' not in st.session_state:
-    #     st.session_state['prompt'] = os.getenv("QUESTION_PROMPT", "Please reply to the question using only the information present in the text above. If you can't find it, reply 'Not in the text'.\nQuestion: _QUESTION_\nAnswer:").replace(r'\n', '\n')
     if 'response' not in st.session_state:
         st.session_state['response'] = default_answer
     if 'context' not in st.session_state:
@@ -116,6 +123,15 @@ try:
         st.session_state['custom_prompt'] = ""
     if 'custom_temperature' not in st.session_state:
         st.session_state['custom_temperature'] = float(os.getenv("OPENAI_TEMPERATURE", 0.7))
+
+    if 'sources' not in st.session_state:
+        st.session_state['sources'] = ""
+    if 'followup_questions' not in st.session_state:
+        st.session_state['followup_questions'] = []
+    if 'input_message_key' not in st.session_state:
+        st.session_state ['input_message_key'] = 1
+    if 'askedquestion' not in st.session_state:
+        st.session_state.askedquestion = default_question
 
     # Set page layout to wide screen and menu item
     menu_items = {
@@ -161,16 +177,59 @@ try:
             st.text_area("Custom Prompt", key='custom_prompt', on_change=check_variables_in_prompt, placeholder= custom_prompt_placeholder,help=custom_prompt_help, height=150)
             st.selectbox("Language", [None] + list(available_languages.keys()), key='translation_language')
 
-    question = st.text_input("OpenAI Semantic Answer", default_question)
 
-    if question != '':
-        st.session_state['question'] = question
-        st.session_state['question'], st.session_state['response'], st.session_state['context'], sources = llm_helper.get_semantic_answer_lang_chain(question, [])
-        st.markdown("Answer:" + st.session_state['response'])
-        st.markdown(f'\n\nSources: {sources}') 
+    question = st.text_input("Azure OpenAI Semantic Answer", value=st.session_state['askedquestion'], key="input"+str(st.session_state ['input_message_key']), on_change=questionAsked)
+
+    # Answer the question if any
+    if st.session_state.askedquestion != '':
+        st.session_state['question'] = st.session_state.askedquestion
+        st.session_state.askedquestion = ""
+        st.session_state['question'], \
+        st.session_state['response'], \
+        st.session_state['context'], \
+        st.session_state['sources'] = llm_helper.get_semantic_answer_lang_chain(st.session_state['question'], [])
+        st.session_state['response'], followup_questions_list = llm_helper.extract_followupquestions(st.session_state['response'])
+        st.session_state['followup_questions'] = followup_questions_list
+
+    sourceList = []
+
+    # Display the sources and context - even if the page is reloaded
+    if st.session_state['sources'] or st.session_state['context']:
+        st.session_state['response'], sourceList, matchedSourcesList, linkList, filenameList = llm_helper.get_links_filenames(st.session_state['response'], st.session_state['sources'])
+        st.write("<br>", unsafe_allow_html=True)
+        st.markdown("Answer: " + st.session_state['response'])
+ 
+    # Display proposed follow-up questions which can be clicked on to ask that question automatically
+    if len(st.session_state['followup_questions']) > 0:
+        st.write("<br>", unsafe_allow_html=True)
+        st.markdown('**Proposed follow-up questions:**')
+    with st.container():
+        for questionId, followup_question in enumerate(st.session_state['followup_questions']):
+            if followup_question:
+                str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
+                st.button(str_followup_question, key=1000+questionId, on_click=ask_followup_question, args=(followup_question, ))
+
+    if st.session_state['sources'] or st.session_state['context']:
+        # Buttons to display the context used to answer
+        st.write("<br>", unsafe_allow_html=True)
+        st.markdown('**Document sources:**')
+        for id in range(len(sourceList)):
+            st.markdown(f"[{id+1}] {sourceList[id]}")
+
+        # Details on the question and answer context
+        st.write("<br><br>", unsafe_allow_html=True)
         with st.expander("Question and Answer Context"):
-            st.markdown(st.session_state['context'].replace('$', '\$'))
-            st.markdown(f"SOURCES: {sources}") 
+            if not st.session_state['context'] is None and st.session_state['context'] != []:
+                for content_source in st.session_state['context'].keys():
+                    st.markdown(f"#### {content_source}")
+                    for context_text in st.session_state['context'][content_source]:
+                        st.markdown(f"{context_text}")
+
+            st.markdown(f"SOURCES: {st.session_state['sources']}") 
+
+    for questionId, followup_question in enumerate(st.session_state['followup_questions']):
+        if followup_question:
+            str_followup_question = re.sub(r"(^|[^\\\\])'", r"\1\\'", followup_question)
 
     if st.session_state['translation_language'] and st.session_state['translation_language'] != '':
         st.write(f"Translation to other languages, 翻译成其他语言, النص باللغة العربية")

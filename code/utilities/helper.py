@@ -123,7 +123,7 @@ class LLMHelper:
             docs = self.text_splitter.split_documents(documents)
             
             # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
-            pattern = re.compile(r'[\x00-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')
+            pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')  # do not remove \x0a (\n) nor \x0d (\r)
             for(doc) in docs:
                 doc.page_content = re.sub(pattern, '', doc.page_content)
                 if doc.page_content == '':
@@ -151,11 +151,15 @@ class LLMHelper:
         # Extract the text from the file
         text = self.pdf_parser.analyze_read(source_url)
         # Translate if requested
-        text = list(map(lambda x: self.translator.translate(x), text)) if self.enable_translation else text
+        converted_text = list(map(lambda x: self.translator.translate(x), text)) if self.enable_translation else text
+
+        # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
+        pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')  # do not remove \x0a (\n) nor \x0d (\r)
+        converted_text = re.sub(pattern, '', "\n".join(converted_text))
 
         # Upload the text to Azure Blob Storage
         converted_filename = f"converted/{filename}.txt"
-        source_url = self.blob_client.upload_file("\n".join(text), f"converted/{filename}.txt", content_type='text/plain; charset=utf-8')
+        source_url = self.blob_client.upload_file(converted_text, f"converted/{filename}.txt", content_type='text/plain; charset=utf-8')
 
         print(f"Converted file uploaded to {source_url} with filename {filename}")
         # Update the metadata to indicate that the file has been converted
@@ -167,17 +171,20 @@ class LLMHelper:
 
     def get_all_documents(self, k: int = None):
         result = self.vector_store.similarity_search(query="*", k= k if k else self.k)
-        return pd.DataFrame(list(map(lambda x: {
+        dataFrame = pd.DataFrame(list(map(lambda x: {
                 'key': x.metadata['key'],
                 'filename': x.metadata['filename'],
                 'source': urllib.parse.unquote(x.metadata['source']), 
                 'content': x.page_content, 
                 'metadata' : x.metadata,
                 }, result)))
+        if dataFrame.empty is False:
+            dataFrame = dataFrame.sort_values(by='filename')
+        return dataFrame
 
     def get_semantic_answer_lang_chain(self, question, chat_history):
         question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
-        doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=True, prompt=self.prompt)
+        doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=False, prompt=self.prompt)
         chain = ConversationalRetrievalChain(
             retriever=self.vector_store.as_retriever(),
             question_generator=question_generator,
@@ -186,15 +193,24 @@ class LLMHelper:
             # top_k_docs_for_context= self.k
         )
         result = chain({"question": question, "chat_history": chat_history})
-        context = "\n".join(list(map(lambda x: x.page_content, result['source_documents'])))
         sources = "\n".join(set(map(lambda x: x.metadata["source"], result['source_documents'])))
 
         container_sas = self.blob_client.get_container_sas()
+
+        contextDict ={}
+        for res in result['source_documents']:
+            source_key = self.filter_sourcesLinks(res.metadata['source'].replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)).replace('\n', '').replace(' ', '')
+            if source_key not in contextDict:
+                contextDict[source_key] = []
+            myPageContent = self.clean_encoding(res.page_content)
+            contextDict[source_key].append(myPageContent)
         
         result['answer'] = result['answer'].split('SOURCES:')[0].split('Sources:')[0].split('SOURCE:')[0].split('Source:')[0]
+        result['answer'] = self.clean_encoding(result['answer'])
         sources = sources.replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)
+        sources = self.filter_sourcesLinks(sources)
 
-        return question, result['answer'], context, sources
+        return question, result['answer'], contextDict, sources
 
     def get_embeddings_model(self):
         OPENAI_EMBEDDINGS_ENGINE_DOC = os.getenv('OPENAI_EMEBDDINGS_ENGINE', os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002'))  
@@ -209,3 +225,118 @@ class LLMHelper:
             return self.llm([HumanMessage(content=prompt)]).content
         else:
             return self.llm(prompt)
+
+    # remove paths from sources to only keep the filename
+    def filter_sourcesLinks(self, sources):
+        # use regex to replace all occurences of '[anypath/anypath/somefilename.xxx](the_link)' to '[somefilename](thelink)' in sources
+        pattern = r'\[[^\]]*?/([^/\]]*?)\]'
+
+        match = re.search(pattern, sources)
+        while match:
+            withoutExtensions = match.group(1).split('.')[0] # remove any extension to the name of the source document
+            sources = sources[:match.start()] + f'[{withoutExtensions}]' + sources[match.end():]
+            match = re.search(pattern, sources)
+        
+        sources = '  \n ' + sources.replace('\n', '  \n ') # add a carriage return after each source
+
+        return sources
+
+    def extract_followupquestions(self, answer):
+        followupTag = answer.find('Follow-up Questions')
+        followupQuestions = answer.find('<<')
+
+        # take min of followupTag and folloupQuestions if not -1 to avoid taking the followup questions if there is no followupTag
+        followupTag = min(followupTag, followupQuestions) if followupTag != -1 and followupQuestions != -1 else max(followupTag, followupQuestions)
+        answer_without_followupquestions = answer[:followupTag] if followupTag != -1 else answer
+        followup_questions = answer[followupTag:].strip() if followupTag != -1 else ''
+
+        # Extract the followup questions as a list
+        pattern = r'\<\<(.*?)\>\>'
+        match = re.search(pattern, followup_questions)
+        followup_questions_list = []
+        while match:
+            followup_questions_list.append(followup_questions[match.start()+2:match.end()-2])
+            followup_questions = followup_questions[match.end():]
+            match = re.search(pattern, followup_questions)
+        
+        if followup_questions_list != '':
+            # Extract follow up question 
+            pattern = r'\d. (.*)'
+            match = re.search(pattern, followup_questions)
+            while match:
+                followup_questions_list.append(followup_questions[match.start()+3:match.end()])
+                followup_questions = followup_questions[match.end():]
+                match = re.search(pattern, followup_questions)
+
+        if followup_questions_list != '':
+            pattern = r'Follow-up Question: (.*)'
+            match = re.search(pattern, followup_questions)
+            while match:
+                followup_questions_list.append(followup_questions[match.start()+19:match.end()])
+                followup_questions = followup_questions[match.end():]
+                match = re.search(pattern, followup_questions)
+        
+        # Special case when 'Follow-up questions:' appears in the answer after the <<
+        followupTag = answer_without_followupquestions.lower().find('follow-up questions')
+        if followupTag != -1:
+            answer_without_followupquestions = answer_without_followupquestions[:followupTag]
+        followupTag = answer_without_followupquestions.lower().find('follow up questions')  # LLM can make variations...
+        if followupTag != -1:
+            answer_without_followupquestions = answer_without_followupquestions[:followupTag]
+
+        return answer_without_followupquestions, followup_questions_list
+
+    # insert citations in the answer - find filenames in the answer maching sources from the filenamelist and replace them with '${(id+1)}'
+    def insert_citations_in_answer(self, answer, filenameList):
+
+        filenameList_lowered = [x.lower() for x in filenameList]    # LLM can make case mitakes in returing the filename of the source
+
+        matched_sources = []
+        pattern = r'\[\[(.*?)\]\]'
+        match = re.search(pattern, answer)
+        while match:
+            filename = match.group(1).split('.')[0] # remove any extension to the name of the source document
+            if filename in filenameList:
+                if filename not in matched_sources:
+                    matched_sources.append(filename.lower())
+                filenameIndex = filenameList.index(filename) + 1
+                answer = answer[:match.start()] + '$^{' + f'{filenameIndex}' + '}$' + answer[match.end():]
+            else:
+                answer = answer[:match.start()] + '$^{' + f'{filename.lower()}' + '}$' + answer[match.end():]
+            match = re.search(pattern, answer)
+
+        # When page is reloaded search for references already added to the answer (e.g. '${(id+1)}')
+        for id, filename in enumerate(filenameList_lowered):
+            reference = '$^{' + f'{id+1}' + '}$'
+            if reference in answer and not filename in matched_sources:
+                matched_sources.append(filename)
+
+        return answer, matched_sources, filenameList_lowered
+
+    def get_links_filenames(self, answer, sources):
+        split_sources = sources.split('  \n ') # soures are expected to be of format '  \n  [filename1.ext](sourcelink1)  \n [filename2.ext](sourcelink2)  \n  [filename3.ext](sourcelink3)  \n '
+        srcList = []
+        linkList = []
+        filenameList = []
+        for src in split_sources:
+            if src != '':
+                srcList.append(src)
+                link = src[1:].split('(')[1][:-1].split(')')[0] # get the link
+                linkList.append(link)
+                filename = src[1:].split(']')[0] # retrieve the source filename.
+                source_url = link.split('?')[0]
+                answer = answer.replace(source_url, filename)  # if LLM added a path to the filename, remove it from the answer
+                filenameList.append(filename)
+
+        answer, matchedSourcesList, filenameList = self.insert_citations_in_answer(answer, filenameList) # Add (1), (2), (3) to the answer to indicate the source of the answer
+
+        return answer, srcList, matchedSourcesList, linkList, filenameList
+
+    def clean_encoding(self, text):
+        try:
+            encoding = 'ISO-8859-1'
+            encodedtext = text.encode(encoding)
+            encodedtext = encodedtext.decode('utf-8')
+        except Exception as e:
+            encodedtext = text
+        return encodedtext

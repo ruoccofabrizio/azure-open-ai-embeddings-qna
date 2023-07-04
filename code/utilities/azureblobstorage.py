@@ -14,6 +14,9 @@ class AzureBlobStorageClient:
         self.container_name : str = container_name if container_name else os.getenv('BLOB_CONTAINER_NAME')
         self.blob_service_client : BlobServiceClient = BlobServiceClient.from_connection_string(self.connect_str)
 
+    def delete_file(self, file_name):
+        blob_client = self.blob_service_client.get_blob_client(container=self.container_name, blob=file_name)
+        blob_client.delete_blob()
 
     def upload_file(self, bytes_data, file_name, content_type='application/pdf'):
         # Create a blob client using the local file name as the name for the blob
