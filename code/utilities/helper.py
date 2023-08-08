@@ -65,7 +65,7 @@ class LLMHelper:
         self.deployment_type: str = os.getenv("OPENAI_DEPLOYMENT_TYPE", "Text")
         self.temperature: float = float(os.getenv("OPENAI_TEMPERATURE", 0.7)) if temperature is None else temperature
         self.max_tokens: int = int(os.getenv("OPENAI_MAX_TOKENS", -1)) if max_tokens is None else max_tokens
-        self.prompt = PROMPT if custom_prompt == '' else PromptTemplate(template=custom_prompt, input_variables=["summaries", "question"])
+        self.prompt = float(os.getenv("OPENAI_PROMPT", PROMPT)) if custom_prompt == '' else PromptTemplate(template=custom_prompt, input_variables=["summaries", "question"])
         self.vector_store_type = os.getenv("VECTOR_STORE_TYPE")
 
         # Azure Search settings
