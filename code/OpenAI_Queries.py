@@ -145,7 +145,6 @@ try:
     st.set_page_config(layout="wide", menu_items=menu_items)
 
     llm_helper = LLMHelper(custom_prompt=st.session_state.custom_prompt, temperature=st.session_state.custom_temperature)
-
     # Get available languages for translation
     available_languages = get_languages()
 
@@ -188,6 +187,12 @@ try:
         st.session_state['response'], \
         st.session_state['context'], \
         st.session_state['sources'] = llm_helper.get_semantic_answer_lang_chain(st.session_state['question'], [])
+        # print("------------------- context -------------------")
+        # print(st.session_state['context'])
+        # print("----------- response ------------------")
+        # print(st.session_state['response'])
+        # print("------------------- sources -------------------")
+        # print(st.session_state['sources'])
         st.session_state['response'], followup_questions_list = llm_helper.extract_followupquestions(st.session_state['response'])
         st.session_state['followup_questions'] = followup_questions_list
 

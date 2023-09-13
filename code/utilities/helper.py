@@ -111,7 +111,6 @@ class LLMHelper:
     def add_embeddings_lc(self, source_url):
         try:
             documents = self.document_loaders(source_url).load()
-            
             # Convert to UTF-8 encoding for non-ascii text
             for(document) in documents:
                 try:
@@ -119,9 +118,9 @@ class LLMHelper:
                         document.page_content = document.page_content.encode("iso-8859-1").decode("utf-8", errors="ignore")
                 except:
                     pass
-                
-            docs = self.text_splitter.split_documents(documents)
             
+            # 一定の長さでファイルを分割する
+            docs = self.text_splitter.split_documents(documents)
             # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
             pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')  # do not remove \x0a (\n) nor \x0d (\r)
             for(doc) in docs:
@@ -134,7 +133,8 @@ class LLMHelper:
                 # Create a unique key for the document
                 source_url = source_url.split('?')[0]
                 filename = "/".join(source_url.split('/')[4:])
-                hash_key = hashlib.sha1(f"{source_url}_{i}".encode('utf-8')).hexdigest()
+                # hash_key = hashlib.sha1(f"{source_url}_{i}".encode('utf-8')).hexdigest()
+                hash_key = hashlib.sha1(f"{source_url}-page-{i + 1}".encode()).hexdigest()
                 hash_key = f"doc:{self.index_name}:{hash_key}"
                 keys.append(hash_key)
                 doc.metadata = {"source": f"[{source_url}]({source_url}_SAS_TOKEN_PLACEHOLDER_)" , "chunk": i, "key": hash_key, "filename": filename}
@@ -147,9 +147,63 @@ class LLMHelper:
             logging.error(f"Error adding embeddings for {source_url}: {e}")
             raise e
 
+    # メタデータとして元のファイル名、ページ番号を付与する
+    def add_embeddings_lc_demo(self, source_url, page, upload_source_url, upload_filename):
+        try:
+            documents = self.document_loaders(source_url).load()
+
+            # print("---------------------- documents -----------------")
+            # print(documents)
+            
+            # Convert to UTF-8 encoding for non-ascii text
+            for(document) in documents:
+                try:
+                    if document.page_content.encode("iso-8859-1") == document.page_content.encode("latin-1"):
+                        document.page_content = document.page_content.encode("iso-8859-1").decode("utf-8", errors="ignore")
+                except:
+                    pass
+            
+            # 一定の長さでファイルを分割する
+            docs = self.text_splitter.split_documents(documents)
+            # print("--------------- docs before ---------------")
+            # print(docs)
+            # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
+            pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')  # do not remove \x0a (\n) nor \x0d (\r)
+            for(doc) in docs:
+                doc.page_content = re.sub(pattern, '', doc.page_content)
+                if doc.page_content == '':
+                    docs.remove(doc)
+            
+            keys = []
+            # print("--------------- docs after ---------------")
+            # print(docs)
+            for i, doc in enumerate(docs):
+                # Create a unique key for the document
+                source_url = source_url.split('?')[0]
+                filename = "/".join(source_url.split('/')[4:])
+                # hash_key = hashlib.sha1(f"{source_url}_{i}".encode('utf-8')).hexdigest()
+                hash_key = hashlib.sha1(f"{source_url}-page-{i + 1}".encode()).hexdigest()
+                hash_key = f"doc:{self.index_name}:{hash_key}"
+                keys.append(hash_key)
+                print("---------------------------- source_url --------------------------")
+                print(source_url)
+                doc.metadata = {"source": f"[{source_url}]({source_url}_SAS_TOKEN_PLACEHOLDER_)", "upload_source": f"[{upload_filename} p.{page}]({upload_source_url}#page={page})", "page": page, "chunk": i, "key": hash_key, "filename": filename}
+            if self.vector_store_type == 'AzureSearch':
+                self.vector_store.add_documents(documents=docs, keys=keys)
+            else:
+                self.vector_store.add_documents(documents=docs, redis_url=self.vector_store_full_address,  index_name=self.index_name, keys=keys)
+            
+        except Exception as e:
+            logging.error(f"Error adding embeddings for {source_url}: {e}")
+            raise e
+
     def convert_file_and_add_embeddings(self, source_url, filename, enable_translation=False):
         # Extract the text from the file
         text = self.pdf_parser.analyze_read(source_url)
+
+        # print("------------------- text 1 ---------------------")
+        # print(text)
+
         # Translate if requested
         converted_text = list(map(lambda x: self.translator.translate(x), text)) if self.enable_translation else text
 
@@ -164,10 +218,48 @@ class LLMHelper:
         print(f"Converted file uploaded to {source_url} with filename {filename}")
         # Update the metadata to indicate that the file has been converted
         self.blob_client.upsert_blob_metadata(filename, {"converted": "true"})
+        # metadata = {"converted": "true", "page_numbers": ",".join(map(str, page_numbers))}
+        # self.blob_client.upsert_blob_metadata(filename, metadata)
 
         self.add_embeddings_lc(source_url=source_url)
 
         return converted_filename
+    
+    # pdfからテキストファイルを1ページごとに生成できるように変更
+    def convert_file_and_add_embeddings_demo(self, source_url, filename, enable_translation=False):
+        print("------------------------------- first source ---------------------------")
+        print(source_url)
+        upload_file_source_url = source_url
+        # Extract the text from the file
+        texts = self.pdf_parser.analyze_read(source_url)
+        converted_filenames = []
+        page = 0
+        upload_filename = filename
+        # print("------------------- text 1 ---------------------")
+        # print(texts)
+
+        for text in texts:
+            page += 1
+            text = [text]
+            # Translate if requested
+            converted_text = list(map(lambda x: self.translator.translate(x), text)) if self.enable_translation else text
+
+            # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
+            pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')  # do not remove \x0a (\n) nor \x0d (\r)
+            converted_text = re.sub(pattern, '', "\n".join(converted_text))
+
+            # Upload the text to Azure Blob Storage
+            converted_filename = f"converted/{filename}.txt"
+            source_url = self.blob_client.upload_file(converted_text, f"converted/{filename}_{page}.txt", content_type='text/plain; charset=utf-8')
+
+            print(f"Converted file uploaded to {source_url} with filename {filename}")
+            # Update the metadata to indicate that the file has been converted
+            self.blob_client.upsert_blob_metadata(filename, {"converted": "true"})
+            converted_filenames.append(converted_filename)
+
+            self.add_embeddings_lc_demo(source_url=source_url, page=page, upload_source_url=upload_file_source_url, upload_filename=upload_filename)
+
+        return converted_filenames
 
     def get_all_documents(self, k: int = None):
         result = self.vector_store.similarity_search(query="*", k= k if k else self.k)
@@ -211,6 +303,48 @@ class LLMHelper:
         sources = self.filter_sourcesLinks(sources)
 
         return question, result['answer'], contextDict, sources
+    
+    def get_semantic_answer_lang_chain_search_engine(self, question, chat_history):
+        question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
+        doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=False, prompt=self.prompt)
+        chain = ConversationalRetrievalChain(
+            retriever=self.vector_store.as_retriever(),
+            question_generator=question_generator,
+            combine_docs_chain=doc_chain,
+            return_source_documents=True,
+            # top_k_docs_for_context= self.k
+        )
+        result = chain({"question": question, "chat_history": chat_history})
+        sources = "\n".join(set(map(lambda x: x.metadata["source"], result['source_documents'])))
+        print("--------------------sources------------------")
+        print(sources)
+
+        container_sas = self.blob_client.get_container_sas()
+
+        contextDict ={}
+        search_engine_results = []
+        for res in result['source_documents']:
+            search_engine_result = {}
+            print(" ---------------------- res -----------------------")
+            print(res)
+            # source_key = self.filter_sourcesLinks(res.metadata['source'].replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)).replace('\n', '').replace(' ', '')
+            source_key = self.filter_sourcesLinks(res.metadata['upload_source'].replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)).replace('\n', '').replace(' ', '')
+            print("--------------------source key------------------")
+            print(source_key)
+            search_engine_result['source'] = source_key
+            if source_key not in contextDict:
+                contextDict[source_key] = []
+            myPageContent = self.clean_encoding(res.page_content)
+            search_engine_result["page_content"] = myPageContent
+            contextDict[source_key].append(myPageContent)
+            search_engine_results.append(search_engine_result)
+        
+        result['answer'] = result['answer'].split('SOURCES:')[0].split('Sources:')[0].split('SOURCE:')[0].split('Source:')[0]
+        result['answer'] = self.clean_encoding(result['answer'])
+        sources = sources.replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)
+        sources = self.filter_sourcesLinks(sources)
+
+        return question, result['answer'], contextDict, sources, search_engine_results
 
     def get_embeddings_model(self):
         OPENAI_EMBEDDINGS_ENGINE_DOC = os.getenv('OPENAI_EMEBDDINGS_ENGINE', os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002'))  
