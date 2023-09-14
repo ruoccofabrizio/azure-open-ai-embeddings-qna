@@ -151,9 +151,6 @@ class LLMHelper:
     def add_embeddings_lc_demo(self, source_url, page, upload_source_url, upload_filename):
         try:
             documents = self.document_loaders(source_url).load()
-
-            # print("---------------------- documents -----------------")
-            # print(documents)
             
             # Convert to UTF-8 encoding for non-ascii text
             for(document) in documents:
@@ -165,8 +162,6 @@ class LLMHelper:
             
             # 一定の長さでファイルを分割する
             docs = self.text_splitter.split_documents(documents)
-            # print("--------------- docs before ---------------")
-            # print(docs)
             # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
             pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')  # do not remove \x0a (\n) nor \x0d (\r)
             for(doc) in docs:
@@ -175,8 +170,6 @@ class LLMHelper:
                     docs.remove(doc)
             
             keys = []
-            # print("--------------- docs after ---------------")
-            # print(docs)
             for i, doc in enumerate(docs):
                 # Create a unique key for the document
                 source_url = source_url.split('?')[0]
@@ -197,6 +190,7 @@ class LLMHelper:
             logging.error(f"Error adding embeddings for {source_url}: {e}")
             raise e
 
+    # INFO: textsのところにうまいことpageを載せれば、ページごとにconvertしなくてもいけるのでは？
     def convert_file_and_add_embeddings(self, source_url, filename, enable_translation=False):
         # Extract the text from the file
         text = self.pdf_parser.analyze_read(source_url)
@@ -235,8 +229,38 @@ class LLMHelper:
         converted_filenames = []
         page = 0
         upload_filename = filename
-        # print("------------------- text 1 ---------------------")
-        # print(texts)
+
+        for text in texts:
+            page += 1
+            text = [text]
+            # Translate if requested
+            converted_text = list(map(lambda x: self.translator.translate(x), text)) if self.enable_translation else text
+
+            # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
+            pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')  # do not remove \x0a (\n) nor \x0d (\r)
+            converted_text = re.sub(pattern, '', "\n".join(converted_text))
+
+            # Upload the text to Azure Blob Storage
+            converted_filename = f"converted/{filename}.txt"
+            source_url = self.blob_client.upload_file(converted_text, f"converted/{filename}_{page}.txt", content_type='text/plain; charset=utf-8')
+
+            print(f"Converted file uploaded to {source_url} with filename {filename}")
+            # Update the metadata to indicate that the file has been converted
+            self.blob_client.upsert_blob_metadata(filename, {"converted": "true"})
+            converted_filenames.append(converted_filename)
+
+            self.add_embeddings_lc_demo(source_url=source_url, page=page, upload_source_url=upload_file_source_url, upload_filename=upload_filename)
+
+        return converted_filenames
+    
+    # pdfからテキストファイルを1ページごとに生成できるように変更
+    def convert_file_and_add_embeddings_demo_v2(self, source_url, filename, enable_translation=False):
+        upload_file_source_url = source_url
+        # Extract the text from the file
+        texts = self.pdf_parser.analyze_read(source_url)
+        converted_filenames = []
+        page = 0
+        upload_filename = filename
 
         for text in texts:
             page += 1
@@ -316,8 +340,6 @@ class LLMHelper:
         )
         result = chain({"question": question, "chat_history": chat_history})
         sources = "\n".join(set(map(lambda x: x.metadata["source"], result['source_documents'])))
-        print("--------------------sources------------------")
-        print(sources)
 
         container_sas = self.blob_client.get_container_sas()
 
@@ -325,12 +347,8 @@ class LLMHelper:
         search_engine_results = []
         for res in result['source_documents']:
             search_engine_result = {}
-            print(" ---------------------- res -----------------------")
-            print(res)
             # source_key = self.filter_sourcesLinks(res.metadata['source'].replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)).replace('\n', '').replace(' ', '')
             source_key = self.filter_sourcesLinks(res.metadata['upload_source'].replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)).replace('\n', '').replace(' ', '')
-            print("--------------------source key------------------")
-            print(source_key)
             search_engine_result['source'] = source_key
             if source_key not in contextDict:
                 contextDict[source_key] = []

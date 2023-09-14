@@ -187,12 +187,6 @@ try:
         st.session_state['response'], \
         st.session_state['context'], \
         st.session_state['sources'] = llm_helper.get_semantic_answer_lang_chain(st.session_state['question'], [])
-        # print("------------------- context -------------------")
-        # print(st.session_state['context'])
-        # print("----------- response ------------------")
-        # print(st.session_state['response'])
-        # print("------------------- sources -------------------")
-        # print(st.session_state['sources'])
         st.session_state['response'], followup_questions_list = llm_helper.extract_followupquestions(st.session_state['response'])
         st.session_state['followup_questions'] = followup_questions_list
 
