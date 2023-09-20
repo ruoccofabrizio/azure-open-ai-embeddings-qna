@@ -1,6 +1,7 @@
 import streamlit as st
 import os, json, re, io
 from os import path
+import base64
 import requests
 import mimetypes
 import traceback
@@ -72,7 +73,7 @@ try:
 
             if st.session_state.get('filename', '') != uploaded_file.name:
                 upload_file(bytes_data, uploaded_file.name)
-                # converted_filename = ''
+                converted_filenames = [""]
                 if uploaded_file.name.endswith('.txt'):
                     # Add the text to the embeddings
                     llm_helper.add_embeddings_lc(st.session_state['file_url'])
@@ -81,7 +82,15 @@ try:
                     # Get OCR with Layout API and then add embeddigns
                     converted_filenames = llm_helper.convert_file_and_add_embeddings_demo(st.session_state['file_url'], st.session_state['filename'], st.session_state['translate'])
                 
-                llm_helper.blob_client.upsert_blob_metadata(uploaded_file.name, {'converted': 'true', 'embeddings_added': 'true', 'converted_filename': f'{[f for f in converted_filenames]}'})
+                llm_helper.blob_client.upsert_blob_metadata(
+                    uploaded_file.name, 
+                    {
+                        'converted': 'true', 
+                        'embeddings_added': 'true', 
+                        # 'converted_filename': f"{[base64.b64encode(f.encode('utf-8')).decode('utf-8') for f in converted_filenames]}"
+                        'converted_filename': f"{[f for f in converted_filenames]}"
+                    }
+                )
                 st.success(f"File {uploaded_file.name} embeddings added to the knowledge base.")
             
             pdf_display = f'<iframe src="{st.session_state["file_url"]}" width="700" height="1000" type="application/pdf"></iframe>'
