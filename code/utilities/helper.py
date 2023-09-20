@@ -179,9 +179,9 @@ class LLMHelper:
                 hash_key = hashlib.sha1(f"{source_url}-page-{i + 1}".encode()).hexdigest()
                 hash_key = f"doc:{self.index_name}:{hash_key}"
                 keys.append(hash_key)
-                print("---------------------------- source_url --------------------------")
-                print(source_url)
-                doc.metadata = {"source": f"[{source_url}]({source_url}_SAS_TOKEN_PLACEHOLDER_)", "upload_source": f"[{upload_filename} p.{page}]({upload_source_url}#page={page})", "page": page, "chunk": i, "key": hash_key, "filename": filename}
+                doc.metadata = {"source": f"[{source_url}]({source_url}_SAS_TOKEN_PLACEHOLDER_)", "upload_source": f"[{upload_filename} p.{page}]({upload_source_url}_SAS_TOKEN_PLACEHOLDER_#page={page})", "page": page, "chunk": i, "key": hash_key, "filename": filename}
+                print("---------------------------- doc_meta_data --------------------------")
+                print(doc.metadata)
             if self.vector_store_type == 'AzureSearch':
                 self.vector_store.add_documents(documents=docs, keys=keys)
             else:
@@ -221,10 +221,10 @@ class LLMHelper:
         return converted_filename
     
     # pdfからテキストファイルを1ページごとに生成できるように変更
-    def convert_file_and_add_embeddings_demo(self, source_url, filename, enable_translation=False):
+    def convert_file_and_add_embeddings_demo(self, source_url, source_url_witout_sas, filename, enable_translation=False):
         print("------------------------------- first source ---------------------------")
         print(source_url)
-        upload_file_source_url = source_url
+        upload_file_source_url = source_url_witout_sas
         # Extract the text from the file
         texts = self.pdf_parser.analyze_read(source_url)
         converted_filenames = []

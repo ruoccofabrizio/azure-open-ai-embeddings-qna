@@ -46,7 +46,7 @@ def upload_file(bytes_data: bytes, file_name: str):
     st.session_state['filename'] = file_name
     content_type = mimetypes.MimeTypes().guess_type(file_name)[0]
     charset = f"; charset={chardet.detect(bytes_data)['encoding']}" if content_type == 'text/plain' else ''
-    st.session_state['file_url'] = llm_helper.blob_client.upload_file(bytes_data, st.session_state['filename'], content_type=content_type+charset)
+    st.session_state['file_url'], st.session_state['file_url_witout_sas'] = llm_helper.blob_client.upload_file_without_sas(bytes_data, st.session_state['filename'], content_type=content_type+charset)
 
 
 try:
@@ -80,7 +80,7 @@ try:
 
                 else:
                     # Get OCR with Layout API and then add embeddigns
-                    converted_filenames = llm_helper.convert_file_and_add_embeddings_demo(st.session_state['file_url'], st.session_state['filename'], st.session_state['translate'])
+                    converted_filenames = llm_helper.convert_file_and_add_embeddings_demo(st.session_state['file_url'], st.session_state['file_url_witout_sas'], st.session_state['filename'], st.session_state['translate'])
                 
                 llm_helper.blob_client.upsert_blob_metadata(
                     uploaded_file.name, 
