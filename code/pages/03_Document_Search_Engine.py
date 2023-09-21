@@ -13,7 +13,7 @@ pattern = r'(\S)p\.(\d+)'
 def main():
     llm_helper = LLMHelper(custom_prompt="", temperature=0.0)
 
-    st.title("文章検索エンジン")
+    st.title("文章検索エンジン v2")
 
     query = st.text_input("キーワードを入力してください", value=SEARCH_QUERY["search_query"])
 
