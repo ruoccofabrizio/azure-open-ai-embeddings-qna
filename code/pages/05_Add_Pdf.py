@@ -86,9 +86,10 @@ try:
                     uploaded_file.name, 
                     {
                         'converted': 'true', 
-                        'embeddings_added': 'true', 
+                        'embeddings_added': 'true',
+                        'converted_filename': f'{converted_filenames[0] if converted_filenames else ""}',
                         # 'converted_filename': f"{[base64.b64encode(f.encode('utf-8')).decode('utf-8') for f in converted_filenames]}"
-                        'converted_filename': f"{[f for f in converted_filenames]}"
+                        # 'converted_filename': f"{[f for f in converted_filenames]}"
                     }
                 )
                 st.success(f"File {uploaded_file.name} embeddings added to the knowledge base.")

@@ -182,10 +182,15 @@ class LLMHelper:
                 doc.metadata = {"source": f"[{source_url}]({source_url}_SAS_TOKEN_PLACEHOLDER_)", "upload_source": f"[{upload_filename} p.{page}]({upload_source_url}_SAS_TOKEN_PLACEHOLDER_#page={page})", "page": page, "chunk": i, "key": hash_key, "filename": filename}
                 print("---------------------------- doc_meta_data --------------------------")
                 print(doc.metadata)
-            if self.vector_store_type == 'AzureSearch':
-                self.vector_store.add_documents(documents=docs, keys=keys)
-            else:
-                self.vector_store.add_documents(documents=docs, redis_url=self.vector_store_full_address,  index_name=self.index_name, keys=keys)
+            if docs and keys:
+                if self.vector_store_type == 'AzureSearch':
+                    print("---------------------------- docs --------------------------")
+                    print(docs)
+                    print("---------------------------- keys --------------------------")
+                    print(keys)
+                    self.vector_store.add_documents(documents=docs, keys=keys)
+                else:
+                    self.vector_store.add_documents(documents=docs, redis_url=self.vector_store_full_address,  index_name=self.index_name, keys=keys)
             
         except Exception as e:
             logging.error(f"Error adding embeddings for {source_url}: {e}")
