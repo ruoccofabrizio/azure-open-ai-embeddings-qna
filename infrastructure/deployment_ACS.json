@@ -114,14 +114,14 @@
     },
     "OpenAIEngine": {
       "type": "string",
-      "defaultValue": "text-davinci-003",
+      "defaultValue": "gpt-35-turbo",
       "metadata": {
         "description": "OpenAI Engine"
       }
     },
     "OpenAIDeploymentType": {
       "type": "string",
-      "defaultValue": "Text",
+      "defaultValue": "Chat",
       "metadata": {
         "description": "OpenAI Deployment Type. Text for an Instructions based deployment (text-davinci-003). Chat for a Chat based deployment (gpt-35-turbo or gpt-4-32k or gpt-4)."
       }
@@ -243,7 +243,7 @@
       "location": "[resourceGroup().location]",
       "kind": "StorageV2",
       "sku": {
-        "name": "Standard_GRS"
+        "name": "Standard_LRS"
       }
     },
     {
