@@ -220,7 +220,7 @@
       "location": "[resourceGroup().location]",
       "kind": "StorageV2",
       "sku": {
-        "name": "Standard_LRS"
+        "name": "Standard_lrs"
       }
     },
     {
