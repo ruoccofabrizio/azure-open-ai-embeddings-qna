@@ -61,9 +61,9 @@ class LLMHelper:
         self.api_version = openai.api_version
         self.index_name: str = "embeddings"
         self.model: str = os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', "text-embedding-ada-002")
-        self.deployment_name: str = os.getenv("OPENAI_ENGINE", os.getenv("OPENAI_ENGINES", "text-davinci-003"))
-        self.deployment_type: str = os.getenv("OPENAI_DEPLOYMENT_TYPE", "Text")
-        self.temperature: float = float(os.getenv("OPENAI_TEMPERATURE", 0.7)) if temperature is None else temperature
+        self.deployment_name: str = os.getenv("OPENAI_ENGINE", os.getenv("OPENAI_ENGINES", "gpt-4-32k"))
+        self.deployment_type: str = os.getenv("OPENAI_DEPLOYMENT_TYPE", "Chat")
+        self.temperature: float = float(os.getenv("OPENAI_TEMPERATURE", 0.0)) if temperature is None else temperature
         self.max_tokens: int = int(os.getenv("OPENAI_MAX_TOKENS", -1)) if max_tokens is None else max_tokens
         self.prompt = PROMPT if custom_prompt == '' else PromptTemplate(template=custom_prompt, input_variables=["summaries", "question"])
         self.vector_store_type = os.getenv("VECTOR_STORE_TYPE")
@@ -85,8 +85,8 @@ class LLMHelper:
             else:
                 self.vector_store_full_address = f"{self.vector_store_protocol}{self.vector_store_address}:{self.vector_store_port}"
 
-        self.chunk_size = int(os.getenv('CHUNK_SIZE', 500))
-        self.chunk_overlap = int(os.getenv('CHUNK_OVERLAP', 100))
+        self.chunk_size = int(os.getenv('CHUNK_SIZE', 200))
+        self.chunk_overlap = int(os.getenv('CHUNK_OVERLAP', 50))
         self.document_loaders: BaseLoader = WebBaseLoader if document_loaders is None else document_loaders
         self.text_splitter: TextSplitter = TokenTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap) if text_splitter is None else text_splitter
         self.embeddings: OpenAIEmbeddings = OpenAIEmbeddings(model=self.model, chunk_size=1) if embeddings is None else embeddings
