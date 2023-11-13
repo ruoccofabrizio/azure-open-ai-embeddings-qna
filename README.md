@@ -83,6 +83,19 @@ Please be aware that you need:
 -   an existing Form Recognizer Resource (OPTIONAL - if you want to extract text out of documents)
 -   an existing Translator Resource (OPTIONAL - if you want to translate documents)
 
+## Deploy on Azure China (WebApp + Redis Stack + Batch Processing)
+[![Deploy to Azure](https://aka.ms/deploytoazurechinabutton)](https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment.json)
+
+Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
+
+![Architecture](docs/architecture_redis.png)
+
+Please be aware that you need:
+-   an existing Azure OpenAI resource with models deployments (instruction models e.g. `text-davinci-003`, and embeddings models e.g. `text-embedding-ada-002`) 
+-   an existing Form Recognizer Resource (OPTIONAL - if you want to extract text out of documents)
+-   an existing Translator Resource (OPTIONAL - if you want to translate documents)
+
+
 ## Run everything locally in Docker (WebApp + Redis Stack + Batch Processing)
 
 First, clone the repo:
