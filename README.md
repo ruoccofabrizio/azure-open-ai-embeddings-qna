@@ -35,6 +35,7 @@ You have multiple options to run the code:
 -   [Deploy on Azure (WebApp + Batch Processing) with Azure Cognitive Search](#deploy-on-azure-webapp--batch-processing-with-azure-cognitive-search)
 -   [Deploy on Azure (WebApp + Azure Cache for Redis + Batch Processing)](#deploy-on-azure-webapp--azure-cache-for-redis-enterprise--batch-processing)
 -   [Deploy on Azure (WebApp + Redis Stack + Batch Processing)](#deploy-on-azure-webapp--redis-stack--batch-processing)
+-   [Deploy on Azure China (WebApp + Redis Stack + Batch Processing)](#deploy-on-azure-china-webapp--redis-stack--batch-processing)
 -   [Run everything locally in Docker (WebApp + Redis Stack + Batch Processing)](#run-everything-locally-in-docker-webapp--redis-stack--batch-processing)
 -   [Run everything locally in Python with Conda (WebApp only)](#run-everything-locally-in-python-with-conda-webapp-only)
 -   [Run everything locally in Python with venv](#run-everything-locally-in-python-with-venv)
@@ -84,7 +85,7 @@ Please be aware that you need:
 -   an existing Translator Resource (OPTIONAL - if you want to translate documents)
 
 ## Deploy on Azure China (WebApp + Redis Stack + Batch Processing)
-[![Deploy to Azure](https://aka.ms/deploytoazurechinabutton)](https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurechinabutton)](https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fcyberflying%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment_azcn.json)
 
 Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
 
