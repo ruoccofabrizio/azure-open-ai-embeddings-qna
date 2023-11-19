@@ -196,8 +196,6 @@
     }
   },
   "variables": {
-    "ContainerImageName": "redis/redis-stack-server:latest",
-    "WebAppImageName": "DOCKER|fruocco/oai-embeddings",
     "BlobContainerName": "documents",
     "FileShareName": "redisdata",
     "QueueName": "doc-processing",
@@ -548,7 +546,7 @@
     },
     {
       "type": "Microsoft.Web/sites/host/functionKeys",
-      "apiVersion": "2018-11-01",concat(
+      "apiVersion": "2018-11-01",
       "name": "[concat(parameters('FunctionName'), '/default/clientKey')]",
       "dependsOn": [
         "[resourceId('Microsoft.Web/sites', parameters('FunctionName'))]",
