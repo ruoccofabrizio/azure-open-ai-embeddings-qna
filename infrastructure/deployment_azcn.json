@@ -354,7 +354,7 @@
             },
             {
               "name": "AzureWebJobsStorage",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('StorageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('StorageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.chinacloudapi.cn')]"
             },
             {
               "name": "OPENAI_ENGINE",
@@ -410,7 +410,7 @@
             },
             {
               "name": "REDIS_ADDRESS",
-              "value": "[concat(parameters('DNSNameLabel'),'.' , resourceGroup().location ,'.azurecontainer.io')]"
+              "value": "[concat(parameters('DNSNameLabel'),'.' , resourceGroup().location ,'.azurecontainer.console.azure.cn')]"
             },
             {
               "name": "REDIS_PASSWORD",
@@ -547,7 +547,7 @@
         "OPENAI_DEPLOYMENT_TYPE": "[parameters('OpenAIDeploymentType')]",
         "OPENAI_EMBEDDINGS_ENGINE_DOC": "[parameters('OpenAIEmbeddingsEngineDoc')]",
         "OPENAI_EMBEDDINGS_ENGINE_QUERY": "[parameters('OpenAIEmbeddingsEngineQuery')]",
-        "REDIS_ADDRESS": "[concat(parameters('DNSNameLabel'),'.' , resourceGroup().location ,'.azurecontainer.io')]",
+        "REDIS_ADDRESS": "[concat(parameters('DNSNameLabel'),'.' , resourceGroup().location ,'.azurecontainer.console.azure.cn')]",
         "REDIS_PASSWORD": "[parameters('RedisPassword')]",
         "OPENAI_API_BASE": "[concat('https://', parameters('OpenAIName'),'.openai.azure.com/')]",
         "OPENAI_API_KEY": "[parameters('OpenAIKey')]",
