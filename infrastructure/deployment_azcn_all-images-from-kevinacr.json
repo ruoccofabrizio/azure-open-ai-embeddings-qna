@@ -196,7 +196,6 @@
     }
   },
   "variables": {
-    "WebAppImageName": "DOCKER|fruocco/oai-embeddings",
     "BlobContainerName": "documents",
     "FileShareName": "redisdata",
     "QueueName": "doc-processing",
@@ -228,7 +227,21 @@
       "properties": {
         "serverFarmId": "[parameters('HostingPlanName')]",
         "siteConfig": {
-          "linuxFxVersion": "[variables('WebAppImageName')]"
+          "linuxFxVersion": "[concat('DOCKER|', parameters('ACRServer'), '/oai-embeddings:latest')]",
+          "appSettings": [
+            {
+              "name": "DOCKER_REGISTRY_SERVER_URL",
+              "value": "[concat('https://', parameters('ACRServer'))]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+              "value": "[parameters('ACRUser')]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+              "value": "[parameters('ACRPassword')]"
+            }
+          ]
         }
       }
     },
@@ -431,6 +444,18 @@
             {
               "name": "QUEUE_NAME",
               "value": "[variables('QueueName')]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_URL",
+              "value": "[concat('https://', parameters('ACRServer'))]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+              "value": "[parameters('ACRUser')]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+              "value": "[parameters('ACRPassword')]"
             }
           ],
           "cors": {
@@ -439,7 +464,7 @@
             ]
           },
           "use32BitWorkerProcess": false,
-          "linuxFxVersion": "DOCKER|fruocco/oai-batch:latest",
+          "linuxFxVersion": "[concat('DOCKER|', parameters('ACRServer'), '/oai-batch:latest')]",
           "appCommandLine": "",
           "alwaysOn": true
         },
