@@ -89,6 +89,7 @@
       "type": "string",
       "metadata": {
         "description": "Azure Container Registry Password"
+      }
     },
     "OpenAIName": {
       "type": "string",
