@@ -85,8 +85,22 @@
         "description": "Name of Application Insights"
       }
     },
-    "ACRPassword": {
+    "ACRServer": {
       "type": "string",
+      "defaultValue": "kevinacr.azurecr.cn",
+      "metadata": {
+        "description": "Azure Container Registry Server"
+      }
+    },
+    "ACRUser": {
+      "type": "securestring",
+      "defaultValue": "kevinacr",
+      "metadata": {
+        "description": "Azure Container Registry Username"
+      }
+    },
+    "ACRPassword": {
+      "type": "securestring",
       "metadata": {
         "description": "Azure Container Registry Password"
       }
@@ -215,7 +229,21 @@
       "properties": {
         "serverFarmId": "[parameters('HostingPlanName')]",
         "siteConfig": {
-          "linuxFxVersion": "[variables('WebAppImageName')]"
+          "linuxFxVersion": "[concat('DOCKER|', parameters('ACRServer'), '/oai-embeddings:latest')]",
+          "appSettings": [
+            {
+              "name": "DOCKER_REGISTRY_SERVER_URL",
+              "value": "[concat('https://', parameters('ACRServer'))]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+              "value": "[parameters('ACRUser')]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+              "value": "[parameters('ACRPassword')]"
+            }
+          ]
         }
       }
     },
@@ -418,6 +446,18 @@
             {
               "name": "QUEUE_NAME",
               "value": "[variables('QueueName')]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_URL",
+              "value": "[concat('https://', parameters('ACRServer'))]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+              "value": "[parameters('ACRUser')]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+              "value": "[parameters('ACRPassword')]"
             }
           ],
           "cors": {
@@ -426,7 +466,7 @@
             ]
           },
           "use32BitWorkerProcess": false,
-          "linuxFxVersion": "DOCKER|fruocco/oai-batch:latest",
+          "linuxFxVersion": "[concat('DOCKER|', parameters('ACRServer'), '/oai-batch:latest')]",
           "appCommandLine": "",
           "alwaysOn": true
         },
@@ -446,7 +486,7 @@
           {
             "name": "[parameters('ContainerName')]",
             "properties": {
-              "image": "kevinacr.azurecr.cn/redis-stack-server:latest",
+              "image": "[concat(parameters('ACRServer'), '/redis-stack-server:latest')]",
               "resources": {
                 "requests": {
                   "cpu": 1,
@@ -477,8 +517,8 @@
         "osType": "Linux",
         "imageRegistryCredentials": [
           {
-            "server": "kevinacr.azurecr.cn",
-            "username": "kevinacr",
+            "server": "[parameters('ACRServer')]",
+            "username": "[parameters('ACRUser')]",
             "password": "[parameters('ACRPassword')]"
           }
         ],
@@ -508,7 +548,7 @@
     },
     {
       "type": "Microsoft.Web/sites/host/functionKeys",
-      "apiVersion": "2018-11-01",
+      "apiVersion": "2018-11-01",concat(
       "name": "[concat(parameters('FunctionName'), '/default/clientKey')]",
       "dependsOn": [
         "[resourceId('Microsoft.Web/sites', parameters('FunctionName'))]",
@@ -548,7 +588,7 @@
         "TRANSLATE_ENDPOINT": "[parameters('TranslateEndpoint')]",
         "TRANSLATE_KEY": "[parameters('TranslateKey')]",
         "TRANSLATE_REGION": "[parameters('TranslateRegion')]",
-        "CONVERT_ADD_EMBEDDINGS_URL": "[concat('https://', parameters('FunctionName') , '.azurewebsites.net/api/BatchStartProcessing?code=', variables('ClientKey'))]"
+        "CONVERT_ADD_EMBEDDINGS_URL": "[concat('https://', parameters('FunctionName') , '.chinacloudsites.cn/api/BatchStartProcessing?code=', variables('ClientKey'))]"
       }
     },
     {
