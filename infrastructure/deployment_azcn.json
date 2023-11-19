@@ -85,6 +85,11 @@
         "description": "Name of Application Insights"
       }
     },
+    "ACRPassword": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Container Registry Password"
+    },
     "OpenAIName": {
       "type": "string",
       "metadata": {
@@ -440,7 +445,7 @@
           {
             "name": "[parameters('ContainerName')]",
             "properties": {
-              "image": "[variables('ContainerImageName')]",
+              "image": "kevinacr.azurecr.cn/redis-stack-server:latest",
               "resources": {
                 "requests": {
                   "cpu": 1,
@@ -469,6 +474,13 @@
           }
         ],
         "osType": "Linux",
+        "imageRegistryCredentials": [
+          {
+            "server": "kevinacr.azurecr.cn",
+            "username": "kevinacr",
+            "password": "[parameters('ACRPassword')]"
+          }
+        ],
         "ipAddress": {
           "type": "Public",
           "ports": [
