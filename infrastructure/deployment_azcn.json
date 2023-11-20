@@ -446,7 +446,7 @@
               "value": "[variables('QueueName')]"
             },
             {
-              "name": " ",
+              "name": "DOCKER_REGISTRY_SERVER_URL",
               "value": "[concat('https://', parameters('ACRServer'))]"
             },
             {
