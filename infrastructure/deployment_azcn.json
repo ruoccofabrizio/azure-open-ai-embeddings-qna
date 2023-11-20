@@ -241,7 +241,7 @@
               "value": "[parameters('ACRPassword')]"
             }
           ],
-          "linuxFxVersion": "[concat('DOCKER|https://', parameters('ACRServer'), '/oai-embeddings:latest')]"
+          "linuxFxVersion": "[concat('DOCKER|', parameters('ACRServer'), '/oai-embeddings:latest')]"
         }
       }
     },
@@ -446,7 +446,7 @@
               "value": "[variables('QueueName')]"
             },
             {
-              "name": "DOCKER_REGISTRY_SERVER_URL",
+              "name": " ",
               "value": "[concat('https://', parameters('ACRServer'))]"
             },
             {
