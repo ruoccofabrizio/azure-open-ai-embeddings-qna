@@ -228,7 +228,6 @@
       "properties": {
         "serverFarmId": "[parameters('HostingPlanName')]",
         "siteConfig": {
-          "linuxFxVersion": "[concat('DOCKER|', parameters('ACRServer'), '/oai-embeddings:latest')]",
           "appSettings": [
             {
               "name": "DOCKER_REGISTRY_SERVER_URL",
@@ -240,9 +239,10 @@
             },
             {
               "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
-              "value": "[listCredentials(resourceId('Microsoft.ContainerRegistry/registries', parameters('ACRServer')), '2019-05-01').passwords[0].value]"
+              "value": "[parameters('ACRPassword')]"
             }
-          ]
+          ],
+          "linuxFxVersion": "[concat('DOCKER|', parameters('ACRServer'), '/oai-embeddings:latest')]"
         }
       }
     },
