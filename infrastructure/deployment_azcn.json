@@ -240,7 +240,7 @@
             },
             {
               "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
-              "value": "[parameters('ACRPassword')]"
+              "value": "[listCredentials(resourceId('Microsoft.ContainerRegistry/registries', parameters('ACRServer')), '2019-05-01').passwords[0].value]"
             }
           ]
         }
