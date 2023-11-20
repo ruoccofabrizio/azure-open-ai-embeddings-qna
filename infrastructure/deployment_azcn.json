@@ -242,7 +242,7 @@
               "value": "[parameters('ACRPassword')]"
             }
           ],
-          "linuxFxVersion": "[concat('DOCKER|', parameters('ACRServer'), '/oai-embeddings:latest')]"
+          "linuxFxVersion": "[concat('DOCKER|https://', parameters('ACRServer'), '/oai-embeddings:latest')]"
         }
       }
     },
