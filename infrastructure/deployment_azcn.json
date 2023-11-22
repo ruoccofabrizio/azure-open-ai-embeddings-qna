@@ -38,20 +38,13 @@
     },
     "HostingPlanSku": {
       "type": "string",
-      "defaultValue": "B3",
+      "defaultValue": "P3V2",
       "allowedValues": [
-        "F1",
-        "D1",
-        "B1",
-        "B2",
         "B3",
-        "S1",
         "S2",
         "S3",
-        "P1",
-        "P2",
-        "P3",
-        "P4"
+        "P2V2",
+        "P3V2"
       ],
       "metadata": {
         "description": "The pricing tier for the App Service plan"
@@ -83,26 +76,6 @@
       "defaultValue": "[concat(parameters('ResourcePrefix'), '-appinsights')]",
       "metadata": {
         "description": "Name of Application Insights"
-      }
-    },
-    "ACRServer": {
-      "type": "string",
-      "defaultValue": "kevinacr.azurecr.cn",
-      "metadata": {
-        "description": "Azure Container Registry Server"
-      }
-    },
-    "ACRUser": {
-      "type": "securestring",
-      "defaultValue": "kevinacr",
-      "metadata": {
-        "description": "Azure Container Registry Username"
-      }
-    },
-    "ACRPassword": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Azure Container Registry Password"
       }
     },
     "OpenAIName": {
@@ -227,21 +200,7 @@
       "properties": {
         "serverFarmId": "[parameters('HostingPlanName')]",
         "siteConfig": {
-          "appSettings": [
-            {
-              "name": "DOCKER_REGISTRY_SERVER_URL",
-              "value": "[concat('https://', parameters('ACRServer'))]"
-            },
-            {
-              "name": "DOCKER_REGISTRY_SERVER_USERNAME",
-              "value": "[parameters('ACRUser')]"
-            },
-            {
-              "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
-              "value": "[parameters('ACRPassword')]"
-            }
-          ],
-          "linuxFxVersion": "[concat('DOCKER|', parameters('ACRServer'), '/oai-embeddings:latest')]"
+          "linuxFxVersion": "DOCKER|cyberflying/aoai-web:latest"
         }
       }
     },
@@ -444,18 +403,6 @@
             {
               "name": "QUEUE_NAME",
               "value": "[variables('QueueName')]"
-            },
-            {
-              "name": "DOCKER_REGISTRY_SERVER_URL",
-              "value": "[concat('https://', parameters('ACRServer'))]"
-            },
-            {
-              "name": "DOCKER_REGISTRY_SERVER_USERNAME",
-              "value": "[parameters('ACRUser')]"
-            },
-            {
-              "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
-              "value": "[parameters('ACRPassword')]"
             }
           ],
           "cors": {
@@ -464,7 +411,7 @@
             ]
           },
           "use32BitWorkerProcess": false,
-          "linuxFxVersion": "[concat('DOCKER|', parameters('ACRServer'), '/oai-batch:latest')]",
+          "linuxFxVersion": "DOCKER|cyberflying/aoai-batch:latest",
           "appCommandLine": "",
           "alwaysOn": true
         },
@@ -484,11 +431,11 @@
           {
             "name": "[parameters('ContainerName')]",
             "properties": {
-              "image": "[concat(parameters('ACRServer'), '/redis-stack-server:latest')]",
+              "image": "cyberflying/redis-stack-server:latest",
               "resources": {
                 "requests": {
-                  "cpu": 1,
-                  "memoryInGb": 1.5
+                  "cpu": 4,
+                  "memoryInGb": 16
                 }
               },
               "environmentVariables": [
@@ -513,13 +460,6 @@
           }
         ],
         "osType": "Linux",
-        "imageRegistryCredentials": [
-          {
-            "server": "[parameters('ACRServer')]",
-            "username": "[parameters('ACRUser')]",
-            "password": "[parameters('ACRPassword')]"
-          }
-        ],
         "ipAddress": {
           "type": "Public",
           "ports": [
