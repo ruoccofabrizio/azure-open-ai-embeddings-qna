@@ -113,14 +113,13 @@
     },
     "OpenAIKey": {
       "type": "securestring",
-      "defaultValue": "sk-",
       "metadata": {
         "description": "OpenAI API Key"
       }
     },
     "OpenAIEngine": {
       "type": "string",
-      "defaultValue": "text-davinci-003",
+      "defaultValue": "davinci",
       "metadata": {
         "description": "OpenAI Engine"
       }
@@ -148,7 +147,7 @@
     },
     "OpenAITemperature": {
       "type": "string",
-      "defaultValue": "0.7",
+      "defaultValue": "0.1",
       "metadata": {
         "description": "OpenAI Temperature"
       }
@@ -174,6 +173,7 @@
     },
     "TranslateEndpoint": {
       "type": "string",
+      "defaultValue": "https://api.translator.azure.cn/",
       "metadata": {
         "description": "Translator Endpoint"
       }
@@ -227,7 +227,6 @@
       "properties": {
         "serverFarmId": "[parameters('HostingPlanName')]",
         "siteConfig": {
-          "linuxFxVersion": "[concat('DOCKER|', parameters('ACRServer'), '/oai-embeddings:latest')]",
           "appSettings": [
             {
               "name": "DOCKER_REGISTRY_SERVER_URL",
@@ -241,7 +240,8 @@
               "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
               "value": "[parameters('ACRPassword')]"
             }
-          ]
+          ],
+          "linuxFxVersion": "[concat('DOCKER|', parameters('ACRServer'), '/oai-embeddings:latest')]"
         }
       }
     },
@@ -367,7 +367,7 @@
             },
             {
               "name": "AzureWebJobsStorage",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('StorageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('StorageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.chinacloudapi.cn')]"
             },
             {
               "name": "OPENAI_ENGINE",
@@ -423,7 +423,7 @@
             },
             {
               "name": "REDIS_ADDRESS",
-              "value": "[concat(parameters('DNSNameLabel'),'.' , resourceGroup().location ,'.azurecontainer.io')]"
+              "value": "[concat(parameters('DNSNameLabel'),'.' , resourceGroup().location ,'.azurecontainer.console.azure.cn')]"
             },
             {
               "name": "REDIS_PASSWORD",
@@ -572,7 +572,7 @@
         "OPENAI_DEPLOYMENT_TYPE": "[parameters('OpenAIDeploymentType')]",
         "OPENAI_EMBEDDINGS_ENGINE_DOC": "[parameters('OpenAIEmbeddingsEngineDoc')]",
         "OPENAI_EMBEDDINGS_ENGINE_QUERY": "[parameters('OpenAIEmbeddingsEngineQuery')]",
-        "REDIS_ADDRESS": "[concat(parameters('DNSNameLabel'),'.' , resourceGroup().location ,'.azurecontainer.io')]",
+        "REDIS_ADDRESS": "[concat(parameters('DNSNameLabel'),'.' , resourceGroup().location ,'.azurecontainer.console.azure.cn')]",
         "REDIS_PASSWORD": "[parameters('RedisPassword')]",
         "OPENAI_API_BASE": "[concat('https://', parameters('OpenAIName'),'.openai.azure.com/')]",
         "OPENAI_API_KEY": "[parameters('OpenAIKey')]",
