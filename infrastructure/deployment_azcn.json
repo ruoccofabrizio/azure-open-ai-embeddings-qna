@@ -161,6 +161,12 @@
     },
     "TranslateRegion": {
       "type": "string",
+      "allowedValues": [
+        "chinaeast2",
+        "chinanorth",
+        "chinanorth2",
+        "chinanorth3"
+      ],
       "metadata": {
         "description": "Translator Region"
       }
