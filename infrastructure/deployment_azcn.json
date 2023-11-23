@@ -78,27 +78,7 @@
         "description": "Name of Application Insights"
       }
     },
-    "ACRServer": {
-      "type": "string",
-      "defaultValue": "kevinacr.azurecr.cn",
-      "metadata": {
-        "description": "Azure Container Registry Server"
-      }
-    },
-    "ACRUser": {
-      "type": "securestring",
-      "defaultValue": "kevinacr",
-      "metadata": {
-        "description": "Azure Container Registry Username"
-      }
-    },
-    "ACRPassword": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Azure Container Registry Password"
-      }
-    },
-    "OpenAIName": {
+   "OpenAIName": {
       "type": "string",
       "metadata": {
         "description": "Name of OpenAI Resource"
@@ -451,7 +431,7 @@
           {
             "name": "[parameters('ContainerName')]",
             "properties": {
-              "image": "[concat(parameters('ACRServer'), '/redis-stack-server:latest')]",
+              "image": "dockerhub.azk8s.cn/redis/redis-stack-server:latest",
               "resources": {
                 "requests": {
                   "cpu": 4,
@@ -480,13 +460,6 @@
           }
         ],
         "osType": "Linux",
-        "imageRegistryCredentials": [
-          {
-            "server": "[parameters('ACRServer')]",
-            "username": "[parameters('ACRUser')]",
-            "password": "[parameters('ACRPassword')]"
-          }
-        ],
         "ipAddress": {
           "type": "Public",
           "ports": [
