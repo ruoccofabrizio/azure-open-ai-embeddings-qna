@@ -5,7 +5,7 @@
     "ResourcePrefix": {
       "type": "string",
       "metadata": {
-        "description": "provide a 2-13 character prefix for all resources."
+        "description": "provide a 2-13 character prefix for all resources. Be sure to lowercase."
       }
     },
     "ContainerName": {
@@ -92,14 +92,12 @@
     },
     "OpenAIEngine": {
       "type": "string",
-      "defaultValue": "davinci",
       "metadata": {
         "description": "OpenAI Engine"
       }
     },
     "OpenAIDeploymentType": {
       "type": "string",
-      "defaultValue": "Chat",
       "allowedValues": [
         "Chat",
         "Text"
