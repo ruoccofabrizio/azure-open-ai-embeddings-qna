@@ -10,7 +10,7 @@ class AzureBlobStorageClient:
 
         self.account_name : str = account_name if account_name else os.getenv('BLOB_ACCOUNT_NAME')
         self.account_key : str = account_key if account_key else os.getenv('BLOB_ACCOUNT_KEY')
-        self.connect_str : str = f"DefaultEndpointsProtocol=https;AccountName={self.account_name};AccountKey={self.account_key};EndpointSuffix=core.windows.net"
+        self.connect_str : str = f"DefaultEndpointsProtocol=https;AccountName={self.account_name};AccountKey={self.account_key};EndpointSuffix=core.chinacloudapi.cn"
         self.container_name : str = container_name if container_name else os.getenv('BLOB_CONTAINER_NAME')
         self.blob_service_client : BlobServiceClient = BlobServiceClient.from_connection_string(self.connect_str)
 
@@ -40,12 +40,12 @@ class AzureBlobStorageClient:
                     "filename" : blob.name,
                     "converted": blob.metadata.get('converted', 'false') == 'true' if blob.metadata else False,
                     "embeddings_added": blob.metadata.get('embeddings_added', 'false') == 'true' if blob.metadata else False,
-                    "fullpath": f"https://{self.account_name}.blob.core.windows.net/{self.container_name}/{blob.name}?{sas}",
+                    "fullpath": f"https://{self.account_name}.blob.core.chinacloudapi.cn/{self.container_name}/{blob.name}?{sas}",
                     "converted_filename": blob.metadata.get('converted_filename', '') if blob.metadata else '',
                     "converted_path": ""
                     })
             else:
-                converted_files[blob.name] = f"https://{self.account_name}.blob.core.windows.net/{self.container_name}/{blob.name}?{sas}"
+                converted_files[blob.name] = f"https://{self.account_name}.blob.core.chinacloudapi.cn/{self.container_name}/{blob.name}?{sas}"
 
         for file in files:
             converted_filename = file.pop('converted_filename', '')
@@ -70,4 +70,4 @@ class AzureBlobStorageClient:
 
     def get_blob_sas(self, file_name):
         # Generate a SAS URL to the blob and return it
-        return f"https://{self.account_name}.blob.core.windows.net/{self.container_name}/{file_name}" + "?" + generate_blob_sas(account_name= self.account_name, container_name=self.container_name, blob_name= file_name, account_key= self.account_key, permission='r', expiry=datetime.utcnow() + timedelta(hours=1))
+        return f"https://{self.account_name}.blob.core.chinacloudapi.cn/{self.container_name}/{file_name}" + "?" + generate_blob_sas(account_name= self.account_name, container_name=self.container_name, blob_name= file_name, account_key= self.account_key, permission='r', expiry=datetime.utcnow() + timedelta(hours=1))
