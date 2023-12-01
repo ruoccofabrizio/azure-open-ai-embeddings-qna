@@ -134,7 +134,7 @@
     },
     "StorageAccountName": {
       "type": "string",
-      "defaultValue": "[concat(parameters('ResourcePrefix'), 'str')]",
+      "defaultValue": "[concat(toLower(parameters('ResourcePrefix')), 'str')]",
       "metadata": {
         "description": "Name of Storage Account"
       }
@@ -254,6 +254,18 @@
       }
     },
     {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+      "apiVersion": "2022-12-01",
+      "name": "[concat(parameters('AzureDatabaseForPostgreSQLName'), '/azure.extensions')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('AzureDatabaseForPostgreSQLName'))]"
+      ],
+      "properties": {
+        "value": "vector",
+        "source": "user-override"
+      }
+    },
+    {
       "type": "Microsoft.CognitiveServices/accounts",
       "apiVersion": "2022-12-01",
       "name": "[parameters('DocumentIntelligenceName')]",
@@ -266,6 +278,7 @@
         "type": "None"
       },
       "properties": {
+        "customSubDomainName": "[toLower(parameters('DocumentIntelligenceName'))]",
         "networkAcls": {
           "defaultAction": "Allow",
           "virtualNetworkRules": [],
