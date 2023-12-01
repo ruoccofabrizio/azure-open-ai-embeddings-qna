@@ -250,8 +250,37 @@
         },
         "highAvailability": {
           "mode": "Disabled"
+        },
+        "publicNetworkAccess": "Enabled"
+      },
+      "resources": [
+        {
+          "type": "firewallRules",
+          "apiVersion": "2023-03-01-preview",
+          "name": "AllowAll",
+          "dependsOn": [
+            "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('AzureDatabaseForPostgreSQLName'))]"
+          ],
+          "properties": {
+            "startIpAddress": "0.0.0.0",
+            "endIpAddress": "255.255.255.255"
+          }
+        },
+        {
+          "type": "firewallRules",
+          "apiVersion": "2023-03-01-preview",
+          "name": "AllowAzureServices",
+          "dependsOn": [
+            "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('AzureDatabaseForPostgreSQLName'))]"
+          ],
+          "properties": {
+            "startIpAddress": "0.0.0.0",
+            "endIpAddress": "0.0.0.0",
+            "startIpAddressRang": "AzureServices",
+            "endIpAddressRang": "AzureServices"
+          }
         }
-      }
+      ]
     },
     {
       "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
@@ -300,6 +329,7 @@
         "type": "None"
       },
       "properties": {
+        "customSubDomainName": "[toLower(parameters('TranslatorName'))]",
         "networkAcls": {
           "defaultAction": "Allow",
           "virtualNetworkRules": [],

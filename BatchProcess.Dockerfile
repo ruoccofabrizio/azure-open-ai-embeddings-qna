@@ -9,3 +9,4 @@ COPY ./code/requirements.txt /
 RUN pip install -r /requirements.txt
 
 COPY ./code /home/site/wwwroot
+RUN rm /home/site/wwwroot/pages/1*.py
