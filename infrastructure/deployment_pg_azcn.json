@@ -536,11 +536,11 @@
             },
             {
               "name": "PGVECTOR_USER",
-              "value": "postgres"
+              "value": "[parameters('AzureDatabaseForPostgreSQLAdminUsername')]"
             },
             {
               "name": "PGVECTOR_PASSWORD",
-              "value": "postgres"
+              "value": "[parameters('AzureDatabaseForPostgreSQLAdminPassword')]"
             },
             {
               "name": "FORM_RECOGNIZER_ENDPOINT",
@@ -616,8 +616,8 @@
         "PGVECTOR_HOST": "[concat(parameters('AzureDatabaseForPostgreSQLName'), '.postgres.database.chinacloudapi.cn')]",
         "PGVECTOR_PORT": "5432",
         "PGVECTOR_DATABASE": "postgres",
-        "PGVECTOR_USER": "postgres",
-        "PGVECTOR_PASSWORD": "postgres",
+        "PGVECTOR_USER": "[parameters('AzureDatabaseForPostgreSQLAdminUsername')]",
+        "PGVECTOR_PASSWORD": "[parameters('AzureDatabaseForPostgreSQLAdminPassword')]",
         "OPENAI_API_BASE": "[concat('https://', parameters('OpenAIName'),'.openai.azure.com/')]",
         "OPENAI_API_KEY": "[parameters('OpenAIKey')]",
         "OPENAI_TEMPERATURE": "[parameters('OpenAITemperature')]",
