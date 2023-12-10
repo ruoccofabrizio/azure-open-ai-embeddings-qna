@@ -62,7 +62,7 @@ def check_deployment():
                 st.error(traceback.format_exc())
         elif llm_helper.vector_store_type == "PGVector":
             try:
-                llm_helper.vector_store.create_vector_extension()
+                llm_helper.vector_store.__post_init__()
                 st.success("PGVector is working!")
             except Exception as e:
                 st.error("""PGVector is not working.  
