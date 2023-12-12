@@ -29,6 +29,7 @@ from utilities.translator import AzureTranslatorClient
 from utilities.customprompt import PROMPT
 from utilities.redis import RedisExtended
 from utilities.azuresearch import AzureSearch
+from utilities.splitbookmarks import *
 
 import pandas as pd
 import urllib
@@ -86,8 +87,8 @@ class LLMHelper:
             else:
                 self.vector_store_full_address = f"{self.vector_store_protocol}{self.vector_store_address}:{self.vector_store_port}"
 
-        self.chunk_size = int(os.getenv('CHUNK_SIZE', 500))
-        self.chunk_overlap = int(os.getenv('CHUNK_OVERLAP', 100))
+        self.chunk_size = int(os.getenv('CHUNK_SIZE', 1024))
+        self.chunk_overlap = int(os.getenv('CHUNK_OVERLAP', 256))
         self.document_loaders: BaseLoader = WebBaseLoader if document_loaders is None else document_loaders
         self.text_splitter: TextSplitter = TokenTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap) if text_splitter is None else text_splitter
         self.embeddings: OpenAIEmbeddings = OpenAIEmbeddings(model=self.model, chunk_size=1) if embeddings is None else embeddings
@@ -196,6 +197,55 @@ class LLMHelper:
             logging.error(f"Error adding embeddings for {source_url}: {e}")
             raise e
 
+    # メタデータとして元のファイル名、ページ番号を付与する
+    def add_embeddings_lc_bookmarks(self, source_url, page, upload_source_url, upload_filename, search_title):
+        try:
+            documents = self.document_loaders(source_url).load()
+            
+            # Convert to UTF-8 encoding for non-ascii text
+            for(document) in documents:
+                try:
+                    if document.page_content.encode("iso-8859-1") == document.page_content.encode("latin-1"):
+                        document.page_content = document.page_content.encode("iso-8859-1").decode("utf-8", errors="ignore")
+                except:
+                    pass
+            
+            # 一定の長さでファイルを分割する
+            docs = self.text_splitter.split_documents(documents)
+            # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
+            pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')  # do not remove \x0a (\n) nor \x0d (\r)
+            for(doc) in docs:
+                doc.page_content = re.sub(pattern, '', doc.page_content)
+                if doc.page_content == '':
+                    docs.remove(doc)
+            
+            keys = []
+            for i, doc in enumerate(docs):
+                # Create a unique key for the document
+                source_url = source_url.split('?')[0]
+                filename = "/".join(source_url.split('/')[4:])
+                # hash_key = hashlib.sha1(f"{source_url}_{i}".encode('utf-8')).hexdigest()
+                hash_key = hashlib.sha1(f"{source_url}-page-{i + 1}".encode()).hexdigest()
+                hash_key = f"doc:{self.index_name}:{hash_key}"
+                keys.append(hash_key)
+                doc.metadata = {"source": f"[{search_title}]({source_url}_SAS_TOKEN_PLACEHOLDER_)", "upload_source": f"[{search_title}]({upload_source_url}_SAS_TOKEN_PLACEHOLDER_#page={page})", "page": page, "chunk": i, "key": hash_key, "filename": filename, "search_title": search_title}
+                # doc.metadataを改行して表示する
+                print("---------------------------- doc_meta_data --------------------------")
+                print(doc.metadata)
+            if docs and keys:
+                if self.vector_store_type == 'AzureSearch':
+                    # print("---------------------------- docs --------------------------")
+                    # print(docs)
+                    # print("---------------------------- keys --------------------------")
+                    # print(keys)
+                    self.vector_store.add_documents(documents=docs, keys=keys)
+                else:
+                    self.vector_store.add_documents(documents=docs, redis_url=self.vector_store_full_address,  index_name=self.index_name, keys=keys)
+            
+        except Exception as e:
+            logging.error(f"Error adding embeddings for {source_url}: {e}")
+            raise e
+        
     # INFO: textsのところにうまいことpageを載せれば、ページごとにconvertしなくてもいけるのでは？
     def convert_file_and_add_embeddings(self, source_url, filename, enable_translation=False):
         # Extract the text from the file
@@ -231,6 +281,7 @@ class LLMHelper:
         print(source_url)
         upload_file_source_url = source_url_witout_sas
         # Extract the text from the file
+        # blobにアップロードされたドキュメント本体のurlが返ってきている
         texts = self.pdf_parser.analyze_read(source_url)
         converted_filenames = []
         page = 0
@@ -256,6 +307,84 @@ class LLMHelper:
             converted_filenames.append(base64.b64encode(converted_filename.encode('utf-8')).decode('utf-8'))
 
             self.add_embeddings_lc_demo(source_url=source_url, page=page, upload_source_url=upload_file_source_url, upload_filename=upload_filename)
+
+        return converted_filenames
+    
+    def convert_file_and_add_embeddings_bookmarks(self, local_source_path, source_url, source_url_witout_sas, filename, enable_translation=False):
+        print("------------------------------- first source ---------------------------")
+        print(source_url)
+        upload_file_source_url = source_url_witout_sas
+
+        # source_urlをもとに、ブックマークを取得する
+        # ex) bookmarks = [{'title': '前書き', 'page_num': 2, 'end_page': }, {'title': '第1章　はじめに', 'page_num': 3, 'end_page': 5}]
+        bookmarks = split_pdf_by_bookmarks(local_source_path)
+        print("------------------------------- bookmarks ---------------------------")
+        print(bookmarks)
+
+
+
+        # Extract the text from the file
+        # blobにアップロードされたドキュメント本体のurlが返ってきている
+        texts = self.pdf_parser.analyze_read(source_url)
+
+        # texts には、ページ単位の文章が入っている
+        print("------------------------------- texts ---------------------------")
+        print(texts)
+        converted_filenames = []
+        page = 0
+        upload_filename = filename
+
+        for bookmark in bookmarks:
+            start_page = bookmark['start_page']
+            end_page = bookmark['end_page']
+
+            if start_page == end_page:
+                text = texts[start_page-1]
+                text = [text]
+            
+            else:
+                # textsの中のstart_pageからend_pageまでの文章を取得してマージする
+                text = texts[start_page-1:end_page]
+
+            # Translate if requested
+            converted_text = list(map(lambda x: self.translator.translate(x), text)) if self.enable_translation else text
+
+            # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
+            pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')
+            converted_text = re.sub(pattern, '', "\n".join(converted_text))
+
+            # Upload the text to Azure Blob Storage
+            converted_filename = f"converted/{filename}.txt"
+            source_url = self.blob_client.upload_file(converted_text, f"converted/{filename}_{page}.txt", content_type='text/plain; charset=utf-8')
+
+            print(f"Converted file uploaded to {source_url} with filename {filename}")
+            # Update the metadata to indicate that the file has been converted
+            #     self.blob_client.upsert_blob_metadata(filename, {"converted": "true"})
+            converted_filenames.append(base64.b64encode(converted_filename.encode('utf-8')).decode('utf-8'))
+
+            self.add_embeddings_lc_bookmarks(source_url=source_url, page=start_page, upload_source_url=upload_file_source_url, upload_filename=upload_filename, search_title=bookmark['title'])
+
+
+        # for text in texts:
+        #     page += 1
+        #     text = [text]
+        #     # Translate if requested
+        #     converted_text = list(map(lambda x: self.translator.translate(x), text)) if self.enable_translation else text
+
+        #     # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
+        #     pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')  # do not remove \x0a (\n) nor \x0d (\r)
+        #     converted_text = re.sub(pattern, '', "\n".join(converted_text))
+
+        #     # Upload the text to Azure Blob Storage
+        #     converted_filename = f"converted/{filename}.txt"
+        #     source_url = self.blob_client.upload_file(converted_text, f"converted/{filename}_{page}.txt", content_type='text/plain; charset=utf-8')
+
+        #     print(f"Converted file uploaded to {source_url} with filename {filename}")
+        #     # Update the metadata to indicate that the file has been converted
+        #     self.blob_client.upsert_blob_metadata(filename, {"converted": "true"})
+        #     converted_filenames.append(base64.b64encode(converted_filename.encode('utf-8')).decode('utf-8'))
+
+        #     self.add_embeddings_lc_demo(source_url=source_url, page=page, upload_source_url=upload_file_source_url, upload_filename=upload_filename)
 
         return converted_filenames
 
@@ -327,8 +456,10 @@ class LLMHelper:
             if source_key not in contextDict:
                 contextDict[source_key] = []
             myPageContent = self.clean_encoding(res.page_content)
-            search_engine_result["page_content"] = myPageContent
-            contextDict[source_key].append(myPageContent)
+            cleaningPageContent = self.add_line_break(myPageContent)
+            search_engine_result["page_content"] = cleaningPageContent
+            search_engine_result["search_title"] = res.metadata['search_title']
+            contextDict[source_key].append(cleaningPageContent)
             search_engine_results.append(search_engine_result)
         
         result['answer'] = result['answer'].split('SOURCES:')[0].split('Sources:')[0].split('SOURCE:')[0].split('Source:')[0]
@@ -466,3 +597,33 @@ class LLMHelper:
         except Exception as e:
             encodedtext = text
         return encodedtext
+
+    # openai を使って、文章に改行を入れる
+    def add_line_break(self, text):
+        messages = [
+            {"role":"system",
+             "content":"You are an AI assistant that helps people find information."
+             },
+             {"role":"user",
+              "content":f'''
+              """で囲まれた文章のような入力があった際に、改行を入れて文章を読みやすくして。
+              ※ただし、文章自体の内容は保ったままにして。
+              出力は読みやすくした文章のみとして、○○しましたみたいな余計な補足は含まないで。
+              """
+              {text}
+              """
+              '''
+            }
+        ]
+        response = openai.ChatCompletion.create(
+            engine=self.deployment_name,
+            messages = messages,
+            temperature=0.1,
+            max_tokens=300,
+            top_p=0.95,
+            frequency_penalty=0,
+            presence_penalty=0,
+            stop=None
+        )
+
+        return response.choices[0]["message"]["content"]

@@ -17,11 +17,14 @@ class AzureFormRecognizerClient:
         self.form_recognizer_key : str = form_recognizer_key if form_recognizer_key else os.getenv('FORM_RECOGNIZER_KEY')
 
     def analyze_read(self, formUrl):
-
+        
+        # 何をしている
+        # 1. AzureFormRecognizerClientのインスタンスを生成
         document_analysis_client = DocumentAnalysisClient(
             endpoint=self.form_recognizer_endpoint, credential=AzureKeyCredential(self.form_recognizer_key)
         )
         
+        # 2. ドキュメントの分析を開始
         poller = document_analysis_client.begin_analyze_document_from_url(
                 "prebuilt-layout", formUrl)
         layout = poller.result()
@@ -56,3 +59,4 @@ class AzureFormRecognizerClient:
                     previous_cell_row += 1
             results[output_file_id] += f"{tablecontent}|"
         return results
+    
