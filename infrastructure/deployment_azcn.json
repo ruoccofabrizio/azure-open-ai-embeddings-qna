@@ -381,6 +381,10 @@
               "value": "[variables('BlobContainerName')]"
             },
             {
+              "name": "AZURE_CLOUD",
+              "value": "AzureChinaCloud"
+            },
+            {
               "name": "FORM_RECOGNIZER_ENDPOINT",
               "value": "[parameters('DocumentIntelligenceEndpoint')]"
             },
@@ -520,6 +524,7 @@
         "OPENAI_DEPLOYMENT_TYPE": "[parameters('OpenAIDeploymentType')]",
         "OPENAI_EMBEDDINGS_ENGINE_DOC": "[parameters('OpenAIEmbeddingsEngineDoc')]",
         "OPENAI_EMBEDDINGS_ENGINE_QUERY": "[parameters('OpenAIEmbeddingsEngineQuery')]",
+        "AZURE_CLOUD": "AzureChinaCloud",
         "REDIS_ADDRESS": "[concat(parameters('DNSNameLabel'),'.' , resourceGroup().location ,'.azurecontainer.console.azure.cn')]",
         "REDIS_PASSWORD": "[parameters('RedisPassword')]",
         "OPENAI_API_BASE": "[concat('https://', parameters('OpenAIName'),'.openai.azure.com/')]",
