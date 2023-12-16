@@ -17,10 +17,7 @@
     },
     "AzureDatabaseForPostgreSQLLocation": {
       "type": "string",
-      "defaultValue": "chinanorth3",
-      "allowedValues": [
-        "chinanorth3"
-      ],
+      "defaultValue": "[resourceGroup().location]",
       "metadata": {
         "description": "Azure Database for PostgreSQL Flexible Server Location."
       }
