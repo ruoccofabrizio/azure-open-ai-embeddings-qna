@@ -63,7 +63,7 @@
     },
     "AzureDatabaseForPostgreSQLSkuName": {
       "type": "string",
-      "defaultValue": "Standard_D64ds_v4",
+      "defaultValue": "Standard_E64ds_v4",
       "allowedValues": [
         "Standard_D4ds_v4",
         "Standard_D8ds_v4",
@@ -83,7 +83,7 @@
     },
     "AzureDatabaseForPostgreSQLStorageSize": {
       "type": "int",
-      "defaultValue": 16384,
+      "defaultValue": 32768,
       "allowedValues": [
         512,
         1024,
@@ -254,18 +254,6 @@
         "publicNetworkAccess": "Enabled"
       },
       "resources": [
-        {
-          "type": "firewallRules",
-          "apiVersion": "2023-03-01-preview",
-          "name": "AllowAll",
-          "dependsOn": [
-            "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('AzureDatabaseForPostgreSQLName'))]"
-          ],
-          "properties": {
-            "startIpAddress": "0.0.0.0",
-            "endIpAddress": "255.255.255.255"
-          }
-        },
         {
           "type": "firewallRules",
           "apiVersion": "2023-03-01-preview",
