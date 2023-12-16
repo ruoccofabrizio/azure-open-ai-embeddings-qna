@@ -34,7 +34,7 @@ If you want to use a Chat based deployment (gpt-35-turbo or gpt-4-32k or gpt-4),
 You have multiple options to run the code:
 -   [Deploy on Azure (WebApp + Batch Processing) with Azure Cognitive Search](#deploy-on-azure-webapp--batch-processing-with-azure-cognitive-search)
 -   [Deploy on Azure (WebApp + Azure Cache for Redis + Batch Processing)](#deploy-on-azure-webapp--azure-cache-for-redis-enterprise--batch-processing)
--   [Deploy on Azure (WebApp + Redis Stack + Batch Processing)](#deploy-on-azure-webapp--redis-stack--batch-processing)
+-   [Deploy on Azure/Azure China (WebApp + Redis Stack + Batch Processing)](#deploy-on-azure-webapp--redis-stack--batch-processing)
 -   [Deploy on Azure China (WebApp + Azure PostgreSQL + Batch Processing)](#deploy-on-azure-china-webapp--azure-postgresql--batch-processing)
 -   [Deploy on Azure China (WebApp + Redis Stack + Batch Processing)](#deploy-on-azure-china-webapp--redis-stack--batch-processing)
 -   [Run everything locally in Docker (WebApp + Redis Stack + Batch Processing)](#run-everything-locally-in-docker-webapp--redis-stack--batch-processing)
@@ -74,7 +74,8 @@ Please be aware that you still need:
 You will add the endpoint and access key information for these resources when deploying the template. 
 
 ## Deploy on Azure (WebApp + Redis Stack + Batch Processing)
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fruoccofabrizio%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment.json) 
+[![Deploy to Azure](https://aka.ms/deploytoazurechinabutton)](https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fcyberflying%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment_azcn.json)
 
 Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
 
@@ -86,23 +87,12 @@ Please be aware that you need:
 -   an existing Translator Resource (OPTIONAL - if you want to translate documents)
 
 ## Deploy on Azure China (WebApp + Azure PostgreSQL + Batch Processing)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fcyberflying%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment_pg.json)
 [![Deploy to Azure](https://aka.ms/deploytoazurechinabutton)](https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fcyberflying%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment_pg_azcn.json)
 
 Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
 
 ![Architecture](docs/architecture_pg.png)
-
-## Deploy on Azure China (WebApp + Redis Stack + Batch Processing)
-[![Deploy to Azure](https://aka.ms/deploytoazurechinabutton)](https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fcyberflying%2Fazure-open-ai-embeddings-qna%2Fmain%2Finfrastructure%2Fdeployment_azcn.json)
-
-Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
-
-![Architecture](docs/architecture_redis.png)
-
-Please be aware that you need:
--   an existing Azure OpenAI resource with models deployments (instruction models e.g. `text-davinci-003`, and embeddings models e.g. `text-embedding-ada-002`) 
--   an existing Form Recognizer Resource (OPTIONAL - if you want to extract text out of documents)
--   an existing Translator Resource (OPTIONAL - if you want to translate documents)
 
 
 ## Run everything locally in Docker (WebApp + Redis Stack + Batch Processing)
@@ -292,13 +282,14 @@ Here is the explanation of the parameters:
 |OPENAI_API_KEY| YOUR_AZURE_OPENAI_KEY | Your Azure OpenAI API Key. Get it in the [Azure Portal](https://portal.azure.com)|
 |OPENAI_TEMPERATURE|0.1| Azure OpenAI Temperature |
 |OPENAI_MAX_TOKENS|-1| Azure OpenAI Max Tokens |
+|AZURE_CLOUD|AzureCloud| Azure Cloud to use. AzureCloud for Azure Global, AzureChinaCloud for Azure China |
 |VECTOR_STORE_TYPE| PGVector | Vector Store Type. Use AzureSearch for Azure Cognitive Search, PGVector for Azure PostgreSQL, leave it blank for Redis or Azure Cache for Redis Enterprise|
 |AZURE_SEARCH_SERVICE_NAME| YOUR_AZURE_SEARCH_SERVICE_URL | Your Azure Cognitive Search service name. Get it in the [Azure Portal](https://portal.azure.com)|
 |AZURE_SEARCH_ADMIN_KEY| AZURE_SEARCH_ADMIN_KEY | Your Azure Cognitive Search Admin key. Get it in the [Azure Portal](https://portal.azure.com)|
-|PGVECTOR_HOST|Your_PG_NAME.postgres.database.chinacloudapi.cn
+|PGVECTOR_HOST|Your_PG_NAME.postgres.database.azure.com or Your_PG_NAME.postgres.database.chinacloudapi.cn
 |PGVECTOR_PORT|5432
-|PGVECTOR_DATABASE|postgres
-|PGVECTOR_USER|postgres
+|PGVECTOR_DATABASE|YOUR_PG_DATABASE
+|PGVECTOR_USER|YOUR_PG_USER
 |PGVECTOR_PASSWORD|YOUR_PG_PASSWORD
 |REDIS_ADDRESS| api | URL for Redis Stack: "api" for docker compose|
 |REDIS_PORT | 6379 | Port for Redis |

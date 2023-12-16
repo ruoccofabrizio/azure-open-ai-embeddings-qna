@@ -456,7 +456,7 @@
             },
             {
               "name": "AzureWebJobsStorage",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('StorageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.chinacloudapi.cn')]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('StorageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
             },
             {
               "name": "OPENAI_ENGINE",
@@ -504,7 +504,7 @@
             },
             {
               "name": "AZURE_CLOUD",
-              "value": "AzureChinaCloud"
+              "value": "AzureCloud"
             },
             {
               "name": "VECTOR_STORE_TYPE",
@@ -516,7 +516,7 @@
             },
             {
               "name": "PGVECTOR_HOST",
-              "value": "[concat(parameters('AzureDatabaseForPostgreSQLName'), '.postgres.database.chinacloudapi.cn')]"
+              "value": "[concat(parameters('AzureDatabaseForPostgreSQLName'), '.postgres.database.azure.com')]"
             },
             {
               "name": "PGVECTOR_PORT",
@@ -536,7 +536,7 @@
             },
             {
               "name": "FORM_RECOGNIZER_ENDPOINT",
-              "value": "[concat('https://',parameters('DocumentIntelligenceName'),'.cognitiveservices.azure.cn/')]"
+              "value": "[concat('https://',parameters('DocumentIntelligenceName'),'.api.cognitive.microsoft.com/')]"
             },
             {
               "name": "FORM_RECOGNIZER_KEY",
@@ -544,7 +544,7 @@
             },
              {
               "name": "TRANSLATE_ENDPOINT",
-              "value": "https://api.translator.azure.cn/"
+              "value": "https://api.cognitive.microsofttranslator.com/"
             },
             {
               "name": "TRANSLATE_KEY",
@@ -603,10 +603,10 @@
         "OPENAI_DEPLOYMENT_TYPE": "[parameters('OpenAIDeploymentType')]",
         "OPENAI_EMBEDDINGS_ENGINE_DOC": "[parameters('OpenAIEmbeddingsEngineDoc')]",
         "OPENAI_EMBEDDINGS_ENGINE_QUERY": "[parameters('OpenAIEmbeddingsEngineQuery')]",
-        "AZURE_CLOUD": "AzureChinaCloud",
+        "AZURE_CLOUD": "AzureCloud",
         "VECTOR_STORE_TYPE": "[variables('VectorStoreType')]",
         "PGVECTOR_DRIVER": "psycopg2",
-        "PGVECTOR_HOST": "[concat(parameters('AzureDatabaseForPostgreSQLName'), '.postgres.database.chinacloudapi.cn')]",
+        "PGVECTOR_HOST": "[concat(parameters('AzureDatabaseForPostgreSQLName'), '.postgres.database.azure.com')]",
         "PGVECTOR_PORT": "5432",
         "PGVECTOR_DATABASE": "postgres",
         "PGVECTOR_USER": "[parameters('AzureDatabaseForPostgreSQLAdminUsername')]",
@@ -618,12 +618,12 @@
         "BLOB_ACCOUNT_NAME": "[parameters('StorageAccountName')]",
         "BLOB_ACCOUNT_KEY": "[listkeys(resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName')), '2015-05-01-preview').key1]",
         "BLOB_CONTAINER_NAME": "[variables('BlobContainerName')]",
-        "FORM_RECOGNIZER_ENDPOINT": "[concat('https://',parameters('DocumentIntelligenceName'),'.cognitiveservices.azure.cn/')]",
+        "FORM_RECOGNIZER_ENDPOINT": "[concat('https://',parameters('DocumentIntelligenceName'),'.api.cognitive.microsoft.com/')]",
         "FORM_RECOGNIZER_KEY": "[listKeys(concat('Microsoft.CognitiveServices/accounts/', parameters('DocumentIntelligenceName')), '2023-05-01').key1]",
-        "TRANSLATE_ENDPOINT": "https://api.translator.azure.cn/",
+        "TRANSLATE_ENDPOINT": "https://api.cognitive.microsofttranslator.com/",
         "TRANSLATE_KEY": "[listKeys(concat('Microsoft.CognitiveServices/accounts/', parameters('TranslatorName')), '2023-05-01').key1]",
         "TRANSLATE_REGION": "[resourceGroup().location]",
-        "CONVERT_ADD_EMBEDDINGS_URL": "[concat('https://', parameters('FunctionName') , '.chinacloudsites.cn/api/BatchStartProcessing?code=', variables('ClientKey'))]"
+        "CONVERT_ADD_EMBEDDINGS_URL": "[concat('https://', parameters('FunctionName') , '.azurewebsites.net/api/BatchStartProcessing?code=', variables('ClientKey'))]"
       }
     },
     {
