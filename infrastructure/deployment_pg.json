@@ -533,7 +533,7 @@
             },
             {
               "name": "FORM_RECOGNIZER_ENDPOINT",
-              "value": "[concat('https://',parameters('DocumentIntelligenceName'),'.api.cognitive.microsoft.com/')]"
+              "value": "[concat('https://',parameters('DocumentIntelligenceName'),'.cognitiveservices.azure.com/')]"
             },
             {
               "name": "FORM_RECOGNIZER_KEY",
@@ -615,7 +615,7 @@
         "BLOB_ACCOUNT_NAME": "[parameters('StorageAccountName')]",
         "BLOB_ACCOUNT_KEY": "[listkeys(resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName')), '2015-05-01-preview').key1]",
         "BLOB_CONTAINER_NAME": "[variables('BlobContainerName')]",
-        "FORM_RECOGNIZER_ENDPOINT": "[concat('https://',parameters('DocumentIntelligenceName'),'.api.cognitive.microsoft.com/')]",
+        "FORM_RECOGNIZER_ENDPOINT": "[concat('https://',parameters('DocumentIntelligenceName'),'.cognitiveservices.azure.com/')]",
         "FORM_RECOGNIZER_KEY": "[listKeys(concat('Microsoft.CognitiveServices/accounts/', parameters('DocumentIntelligenceName')), '2023-05-01').key1]",
         "TRANSLATE_ENDPOINT": "https://api.cognitive.microsofttranslator.com/",
         "TRANSLATE_KEY": "[listKeys(concat('Microsoft.CognitiveServices/accounts/', parameters('TranslatorName')), '2023-05-01').key1]",
