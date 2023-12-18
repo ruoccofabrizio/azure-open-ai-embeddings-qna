@@ -28,6 +28,7 @@ from utilities.translator import AzureTranslatorClient
 from utilities.customprompt import PROMPT
 from utilities.redis import RedisExtended
 from utilities.azuresearch import AzureSearch
+from utilities.pgvector import PGVectorExtended
 
 import pandas as pd
 import urllib
@@ -69,9 +70,23 @@ class LLMHelper:
         self.vector_store_type = os.getenv("VECTOR_STORE_TYPE")
 
         # Azure Search settings
-        if  self.vector_store_type == "AzureSearch":
+        if self.vector_store_type == "AzureSearch":
             self.vector_store_address: str = os.getenv('AZURE_SEARCH_SERVICE_NAME')
             self.vector_store_password: str = os.getenv('AZURE_SEARCH_ADMIN_KEY')
+
+        # PGVector settings
+        elif self.vector_store_type == "PGVector":
+            self.vector_store_driver: str = os.getenv('PGVECTOR_DRIVER', "psycopg2")
+            self.vector_store_address: str = os.getenv('PGVECTOR_HOST', "localhost")
+            self.vector_store_port: int = int(os.getenv('PGVECTOR_PORT', 5432))
+            self.vector_store_database: str = os.getenv("PGVECTOR_DATABASE", "postgres")
+            self.vector_store_username: str = os.getenv("PGVECTOR_USER", "postgres")
+            self.vector_store_password: str = os.getenv("PGVECTOR_PASSWORD", "postgres")
+
+            if self.vector_store_password:
+                self.vector_store_full_address = f"postgresql+{self.vector_store_driver}://{self.vector_store_username}:{self.vector_store_password}@{self.vector_store_address}:{self.vector_store_port}/{self.vector_store_database}"
+            else:
+                self.vector_store_full_address = f"postgresql+{self.vector_store_driver}://{self.vector_store_username}@{self.vector_store_address}:{self.vector_store_port}/{self.vector_store_database}"
 
         else:
             # Vector store settings
@@ -94,8 +109,11 @@ class LLMHelper:
             self.llm: ChatOpenAI = ChatOpenAI(model_name=self.deployment_name, engine=self.deployment_name, temperature=self.temperature, max_tokens=self.max_tokens if self.max_tokens != -1 else None) if llm is None else llm
         else:
             self.llm: AzureOpenAI = AzureOpenAI(deployment_name=self.deployment_name, temperature=self.temperature, max_tokens=self.max_tokens) if llm is None else llm
+       
         if self.vector_store_type == "AzureSearch":
             self.vector_store: VectorStore = AzureSearch(azure_cognitive_search_name=self.vector_store_address, azure_cognitive_search_key=self.vector_store_password, index_name=self.index_name, embedding_function=self.embeddings.embed_query) if vector_store is None else vector_store
+        elif self.vector_store_type == "PGVector":
+            self.vector_store: PGVectorExtended = PGVectorExtended(connection_string=self.vector_store_full_address, embedding_function=self.embeddings, collection_name="qnacollection", pre_delete_collection=False) if vector_store is None else vector_store
         else:
             self.vector_store: RedisExtended = RedisExtended(redis_url=self.vector_store_full_address, index_name=self.index_name, embedding_function=self.embeddings.embed_query) if vector_store is None else vector_store   
         self.k : int = 3 if k is None else k
@@ -138,8 +156,10 @@ class LLMHelper:
                 hash_key = f"doc:{self.index_name}:{hash_key}"
                 keys.append(hash_key)
                 doc.metadata = {"source": f"[{source_url}]({source_url}_SAS_TOKEN_PLACEHOLDER_)" , "chunk": i, "key": hash_key, "filename": filename}
-            if self.vector_store_type == 'AzureSearch':
+            if self.vector_store_type == "AzureSearch":
                 self.vector_store.add_documents(documents=docs, keys=keys)
+            elif self.vector_store_type == "PGVector":
+                self.vector_store.add_documents(documents=docs, keys=keys, ids=keys)
             else:
                 self.vector_store.add_documents(documents=docs, redis_url=self.vector_store_full_address,  index_name=self.index_name, keys=keys)
             

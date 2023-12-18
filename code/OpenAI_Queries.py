@@ -47,19 +47,10 @@ def check_deployment():
             Then restart your application.  
             """)
         st.error(traceback.format_exc())
-    #\ 4. Check if the Redis is working with previous version of data
+    #\ 4. Check if the VectorStore is working with previous version of data
     try:
         llm_helper = LLMHelper()
-        if llm_helper.vector_store_type != "AzureSearch":
-            if llm_helper.vector_store.check_existing_index("embeddings-index"):
-                st.warning("""Seems like you're using a Redis with an old data structure.  
-                If you want to use the new data structure, you can start using the app and go to "Add Document" -> "Add documents in Batch" and click on "Convert all files and add embeddings" to reprocess your documents.  
-                To remove this working, please delete the index "embeddings-index" from your Redis.  
-                If you prefer to use the old data structure, please change your Web App container image to point to the docker image: fruocco/oai-embeddings:2023-03-27_25. 
-                """)
-            else:
-                st.success("Redis is working!")
-        else:
+        if llm_helper.vector_store_type == "AzureSearch":
             try:
                 llm_helper.vector_store.index_exists()
                 st.success("Azure Cognitive Search is working!")
@@ -69,6 +60,26 @@ def check_deployment():
                     Then restart your application.  
                     """)
                 st.error(traceback.format_exc())
+        elif llm_helper.vector_store_type == "PGVector":
+            try:
+                llm_helper.vector_store.__post_init__()
+                st.success("PGVector is working!")
+            except Exception as e:
+                st.error("""PGVector is not working.  
+                    Please check your Azure PostgreSQL server, database, user name and password in the App Settings.
+                    Make sure the network settings(firewall rule) allow your app to access the Azure PostgreSQL service.
+                    Then restart your application.  
+                    """)
+                st.error(traceback.format_exc())
+        else:
+            if llm_helper.vector_store.check_existing_index("embeddings-index"):
+                st.warning("""Seems like you're using a Redis with an old data structure.  
+                If you want to use the new data structure, you can start using the app and go to "Add Document" -> "Add documents in Batch" and click on "Convert all files and add embeddings" to reprocess your documents.  
+                To remove this working, please delete the index "embeddings-index" from your Redis.  
+                If you prefer to use the old data structure, please change your Web App container image to point to the docker image: fruocco/oai-embeddings:2023-03-27_25. 
+                """)
+            else:
+                st.success("Redis is working!")
     except Exception as e:
         st.error(f"""Redis is not working. 
             Please check your Redis connection string in the App Settings.  

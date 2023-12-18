@@ -1,0 +1,646 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "ResourcePrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "provide a 2-13 character prefix for all resources. Be sure to lowercase."
+      }
+    },
+    "AzureDatabaseForPostgreSQLName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('ResourcePrefix'), '-pgsql')]",
+      "metadata": {
+        "description": "Azure Database for PostgreSQL Flexible Server Name"
+      }
+    },
+    "AzureDatabaseForPostgreSQLLocation": {
+      "type": "string",
+      "defaultValue": "chinanorth3",
+      "allowedValues": [
+        "chinanorth3"
+      ],
+      "metadata": {
+        "description": "Azure Database for PostgreSQL Flexible Server Location."
+      }
+    },
+    "AzureDatabaseForPostgreSQLVersion": {
+      "type": "string",
+      "defaultValue": "16",
+      "allowedValues": [
+        "15",
+        "16"
+      ],
+      "metadata": {
+        "description": "Azure Database for PostgreSQL Flexible Server Version"
+      }
+    },
+    "AzureDatabaseForPostgreSQLAdminUsername": {
+      "type": "string",
+      "defaultValue": "postgres",
+      "metadata": {
+        "description": "Azure Database for PostgreSQL Flexible Server Admin Username"
+      }
+    },
+    "AzureDatabaseForPostgreSQLAdminPassword": {
+      "type": "securestring",
+      "defaultValue": "postgres",
+      "metadata": {
+        "description": "Azure Database for PostgreSQL Flexible Server Admin Password"
+      }
+    },
+     "AzureDatabaseForPostgreSQLSkuTier": {
+      "type": "string",
+      "defaultValue": "GeneralPurpose",
+      "allowedValues": [
+        "GeneralPurpose",
+        "MemoryOptimized"
+      ],
+      "metadata": {
+        "description": "Azure Database for PostgreSQL Flexible Server SKU Tier"
+      }
+    },
+    "AzureDatabaseForPostgreSQLSkuName": {
+      "type": "string",
+      "defaultValue": "Standard_E64ds_v4",
+      "allowedValues": [
+        "Standard_D4ds_v4",
+        "Standard_D8ds_v4",
+        "Standard_D16ds_v4",
+        "Standard_D32ds_v4",
+        "Standard_D48ds_v4",
+        "Standard_D64ds_v4",
+        "Standard_E8ds_v4",
+        "Standard_E16ds_v4",
+        "Standard_E32ds_v4",
+        "Standard_E48ds_v4",
+        "Standard_E64ds_v4"
+      ],
+      "metadata": {
+        "description": "Azure Database for PostgreSQL Flexible Server SKU Name"
+      }
+    },
+    "AzureDatabaseForPostgreSQLStorageSize": {
+      "type": "int",
+      "defaultValue": 32768,
+      "allowedValues": [
+        512,
+        1024,
+        2048,
+        4096,
+        8192,
+        16384,
+        32768
+      ],
+      "metadata": {
+        "description": "Azure Database for PostgreSQL Flexible Server Storage Size"
+      }
+    },
+    "DocumentIntelligenceName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('ResourcePrefix'), '-doci')]",
+      "metadata": {
+        "description": "Document intelligence Name"
+      }
+    },
+    "TranslatorName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('ResourcePrefix'), '-translator')]",
+      "metadata": {
+        "description": "Translator Name"
+      }
+    },
+    "HostingPlanName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('ResourcePrefix'), '-plan')]",
+      "metadata": {
+        "description": "Name of App Service plan"
+      }
+    },
+    "HostingPlanSku": {
+      "type": "string",
+      "defaultValue": "P3V2",
+      "allowedValues": [
+        "B3",
+        "S2",
+        "S3",
+        "P2V2",
+        "P3V2"
+      ],
+      "metadata": {
+        "description": "The pricing tier for the App Service plan"
+      }
+    },
+    "StorageAccountName": {
+      "type": "string",
+      "defaultValue": "[concat(toLower(parameters('ResourcePrefix')), 'str')]",
+      "metadata": {
+        "description": "Name of Storage Account"
+      }
+    },
+    "WebsiteName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('ResourcePrefix'), '-site')]",
+      "metadata": {
+        "description": "Name of Web App"
+      }
+    },
+    "FunctionName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('ResourcePrefix'), '-batchfunc')]",
+      "metadata": {
+        "description": "Name of Function App for Batch document processing"
+      }
+    },
+    "ApplicationInsightsName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('ResourcePrefix'), '-appinsights')]",
+      "metadata": {
+        "description": "Name of Application Insights"
+      }
+    },
+   "OpenAIName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of OpenAI Resource"
+      }
+    },
+    "OpenAIKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "OpenAI API Key"
+      }
+    },
+    "OpenAIEngine": {
+      "type": "string",
+      "metadata": {
+        "description": "OpenAI Engine"
+      }
+    },
+    "OpenAIDeploymentType": {
+      "type": "string",
+      "allowedValues": [
+        "Chat",
+        "Text"
+      ],
+      "metadata": {
+        "description": "OpenAI Deployment Type. Text for an Instructions based deployment (text-davinci-003). Chat for a Chat based deployment (gpt-35-turbo or gpt-4-32k or gpt-4)."
+      }
+    },
+    "OpenAIEmbeddingsEngineDoc": {
+      "type": "string",
+      "defaultValue": "text-embedding-ada-002",
+      "metadata": {
+        "description": "OpenAI Embeddings Engine for Documents"
+      }
+    },
+    "OpenAIEmbeddingsEngineQuery": {
+      "type": "string",
+      "defaultValue": "text-embedding-ada-002",
+      "metadata": {
+        "description": "OpenAI Embeddings Engine for Queries"
+      }
+    },
+    "OpenAITemperature": {
+      "type": "string",
+      "defaultValue": "0.1",
+      "metadata": {
+        "description": "OpenAI Temperature"
+      }
+    },
+    "OpenAIMaxTokens": {
+      "type": "string",
+      "defaultValue": "-1",
+      "metadata": {
+        "description": "OpenAI Max Tokens"
+      }
+    },
+    "newGuid": {
+      "type": "string",
+      "defaultValue": "[newGuid()]"
+    }
+  },
+  "variables": {
+    "VectorStoreType": "PGVector",
+    "BlobContainerName": "documents",
+    "QueueName": "doc-processing",
+    "ClientKey": "[concat(uniqueString(guid(resourceGroup().id, deployment().name)), parameters('newGuid'), 'Tg2%')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+      "apiVersion": "2022-12-01",
+      "name": "[parameters('AzureDatabaseForPostgreSQLName')]",
+      "location": "[parameters('AzureDatabaseForPostgreSQLLocation')]",
+      "sku": {
+        "name": "[parameters('AzureDatabaseForPostgreSQLSkuName')]",
+        "tier": "[parameters('AzureDatabaseForPostgreSQLSkuTier')]"
+      },
+      "properties": {
+        "administratorLogin": "[parameters('AzureDatabaseForPostgreSQLAdminUsername')]",
+        "administratorLoginPassword": "[parameters('AzureDatabaseForPostgreSQLAdminPassword')]",
+        "storage": {
+          "storageSizeGB": "[parameters('AzureDatabaseForPostgreSQLStorageSize')]"
+        },
+        "createMode": "Default",
+        "version": "[parameters('AzureDatabaseForPostgreSQLVersion')]",
+        "backup": {
+          "backupRetentionDays": 35
+        },
+        "highAvailability": {
+          "mode": "Disabled"
+        },
+        "publicNetworkAccess": "Enabled"
+      },
+      "resources": [
+        {
+          "type": "firewallRules",
+          "apiVersion": "2023-03-01-preview",
+          "name": "AllowAzureServices",
+          "dependsOn": [
+            "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('AzureDatabaseForPostgreSQLName'))]"
+          ],
+          "properties": {
+            "startIpAddress": "0.0.0.0",
+            "endIpAddress": "0.0.0.0",
+            "startIpAddressRang": "AzureServices",
+            "endIpAddressRang": "AzureServices"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+      "apiVersion": "2022-12-01",
+      "name": "[concat(parameters('AzureDatabaseForPostgreSQLName'), '/azure.extensions')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('AzureDatabaseForPostgreSQLName'))]"
+      ],
+      "properties": {
+        "value": "vector",
+        "source": "user-override"
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2022-12-01",
+      "name": "[parameters('DocumentIntelligenceName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "S0"
+      },
+      "kind": "FormRecognizer",
+      "identity": {
+        "type": "None"
+      },
+      "properties": {
+        "customSubDomainName": "[toLower(parameters('DocumentIntelligenceName'))]",
+        "networkAcls": {
+          "defaultAction": "Allow",
+          "virtualNetworkRules": [],
+          "ipRules": []
+        },
+        "publicNetworkAccess": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2022-12-01",
+      "name": "[parameters('TranslatorName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "S1"
+      },
+      "kind": "TextTranslation",
+      "identity": {
+        "type": "None"
+      },
+      "properties": {
+        "customSubDomainName": "[toLower(parameters('TranslatorName'))]",
+        "networkAcls": {
+          "defaultAction": "Allow",
+          "virtualNetworkRules": [],
+          "ipRules": []
+        },
+        "publicNetworkAccess": "Enabled"
+      }
+    },
+    {
+      "apiVersion": "2020-06-01",
+      "name": "[parameters('HostingPlanName')]",
+      "type": "Microsoft.Web/serverfarms",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "[parameters('HostingPlanSku')]"
+      },
+      "properties": {
+        "name": "[parameters('HostingPlanName')]",
+        "reserved": true
+      },
+      "kind": "linux"
+    },
+    {
+      "apiVersion": "2020-06-01",
+      "name": "[parameters('WebsiteName')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('HostingPlanName'))]"
+      ],
+      "properties": {
+        "serverFarmId": "[parameters('HostingPlanName')]",
+        "siteConfig": {
+          "linuxFxVersion": "DOCKER|cyberflying/aoai-web:latest"
+        }
+      }
+    },
+    {
+      "name": "[parameters('StorageAccountName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-08-01",
+      "location": "[resourceGroup().location]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_GRS"
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('StorageAccountName'), '/default/', variables('BlobContainerName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+      ],
+      "properties": {
+        "publicAccess": "None"
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/queueServices",
+      "apiVersion": "2022-09-01",
+      "name": "[concat(parameters('StorageAccountName'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+      ],
+      "properties": {
+        "cors": {
+          "corsRules": []
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/queueServices/queues",
+      "apiVersion": "2022-09-01",
+      "name": "[concat(parameters('StorageAccountName'), '/default/doc-processing')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/queueServices', parameters('StorageAccountName'), 'default')]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+      ],
+      "properties": {
+        "metadata": {}
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/queueServices/queues",
+      "apiVersion": "2022-09-01",
+      "name": "[concat(parameters('StorageAccountName'), '/default/doc-processing-poison')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/queueServices', parameters('StorageAccountName'), 'default')]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+      ],
+      "properties": {
+        "metadata": {}
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[parameters('ApplicationInsightsName')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "[concat('hidden-link:', resourceId('Microsoft.Web/sites', parameters('ApplicationInsightsName')))]": "Resource"
+      },
+      "properties": {
+        "Application_Type": "web"
+      },
+      "kind": "web"
+    },
+    {
+      "apiVersion": "2018-11-01",
+      "name": "[parameters('FunctionName')]",
+      "type": "Microsoft.Web/sites",
+      "kind": "functionapp,linux",
+      "location": "[resourceGroup().location]",
+      "tags": {},
+      "dependsOn": [
+        "[concat('Microsoft.Web/serverfarms/', parameters('HostingPlanName'))]",
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('StorageAccountName'))]",
+        "[concat('Microsoft.Insights/components/', parameters('ApplicationInsightsName'))]"
+      ],
+      "properties": {
+        "name": "[parameters('FunctionName')]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~4"
+            },
+            {
+              "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+              "value": "false"
+            },
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('ApplicationInsightsName')), '2015-05-01').InstrumentationKey]"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('StorageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.chinacloudapi.cn')]"
+            },
+            {
+              "name": "OPENAI_ENGINE",
+              "value": "[parameters('OpenAIEngine')]"
+            },
+            {
+              "name": "OPENAI_DEPLOYMENT_TYPE",
+              "value": "[parameters('OpenAIDeploymentType')]"
+            },            
+            {
+              "name": "OPENAI_EMBEDDINGS_ENGINE_DOC",
+              "value": "[parameters('OpenAIEmbeddingsEngineDoc')]"
+            },           
+            {
+              "name": "OPENAI_EMBEDDINGS_ENGINE_QUERY",
+              "value": "[parameters('OpenAIEmbeddingsEngineQuery')]"
+            },
+            {
+              "name": "OPENAI_API_BASE",
+              "value": "[concat('https://', parameters('OpenAIName'), '.openai.azure.com/')]"
+            },
+            {
+              "name": "OPENAI_API_KEY",
+              "value": "[parameters('OpenAIKey')]"
+            },
+            {
+              "name": "OPENAI_TEMPERATURE",
+              "value": "[parameters('OpenAITemperature')]"
+            },
+            {
+              "name": "OPENAI_MAX_TOKENS",
+              "value": "[parameters('OpenAIMaxTokens')]"
+            },
+            {
+              "name": "BLOB_ACCOUNT_NAME",
+              "value": "[parameters('StorageAccountName')]"
+            },
+            {
+              "name": "BLOB_ACCOUNT_KEY",
+              "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2019-06-01').keys[0].value]"
+            },
+            {
+              "name": "BLOB_CONTAINER_NAME",
+              "value": "[variables('BlobContainerName')]"
+            },
+            {
+              "name": "AZURE_CLOUD",
+              "value": "AzureChinaCloud"
+            },
+            {
+              "name": "VECTOR_STORE_TYPE",
+              "value": "[variables('VectorStoreType')]"
+            },
+            {
+              "name": "PGVECTOR_DRIVER",
+              "value": "psycopg2"
+            },
+            {
+              "name": "PGVECTOR_HOST",
+              "value": "[concat(parameters('AzureDatabaseForPostgreSQLName'), '.postgres.database.chinacloudapi.cn')]"
+            },
+            {
+              "name": "PGVECTOR_PORT",
+              "value": "5432"
+            },
+            {
+              "name": "PGVECTOR_DATABASE",
+              "value": "postgres"
+            },
+            {
+              "name": "PGVECTOR_USER",
+              "value": "[parameters('AzureDatabaseForPostgreSQLAdminUsername')]"
+            },
+            {
+              "name": "PGVECTOR_PASSWORD",
+              "value": "[parameters('AzureDatabaseForPostgreSQLAdminPassword')]"
+            },
+            {
+              "name": "FORM_RECOGNIZER_ENDPOINT",
+              "value": "[concat('https://',parameters('DocumentIntelligenceName'),'.cognitiveservices.azure.cn/')]"
+            },
+            {
+              "name": "FORM_RECOGNIZER_KEY",
+              "value": "[listKeys(concat('Microsoft.CognitiveServices/accounts/', parameters('DocumentIntelligenceName')), '2023-05-01').key1]"
+            },
+             {
+              "name": "TRANSLATE_ENDPOINT",
+              "value": "https://api.translator.azure.cn/"
+            },
+            {
+              "name": "TRANSLATE_KEY",
+              "value": "[listKeys(concat('Microsoft.CognitiveServices/accounts/', parameters('TranslatorName')), '2023-05-01').key1]"
+            },
+            {
+              "name": "TRANSLATE_REGION",
+              "value": "[resourceGroup().location]"
+            },
+            {
+              "name": "QUEUE_NAME",
+              "value": "[variables('QueueName')]"
+            }
+          ],
+          "cors": {
+            "allowedOrigins": [
+              "https://portal.azure.com"
+            ]
+          },
+          "use32BitWorkerProcess": false,
+          "linuxFxVersion": "DOCKER|cyberflying/aoai-batch:latest",
+          "appCommandLine": "",
+          "alwaysOn": true
+        },
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('HostingPlanName'))]",
+        "clientAffinityEnabled": false,
+        "virtualNetworkSubnetId": null,
+        "httpsOnly": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/host/functionKeys",
+      "apiVersion": "2018-11-01",
+      "name": "[concat(parameters('FunctionName'), '/default/clientKey')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('FunctionName'))]",
+        "WaitFunctionDeploymentSection"
+      ],
+      "properties": {
+        "name": "ClientKey",
+        "value": "[variables('ClientKey')]"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2021-03-01",
+      "name": "[format('{0}/{1}', parameters('WebsiteName'), 'appsettings')]",
+      "kind": "string",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('WebsiteName'))]",
+        "[concat('Microsoft.Insights/components/', parameters('ApplicationInsightsName'))]"
+      ],
+      "properties": {
+        "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('Microsoft.Insights/components', parameters('ApplicationInsightsName')), '2015-05-01').InstrumentationKey]",
+        "OPENAI_ENGINE": "[parameters('OpenAIEngine')]",
+        "OPENAI_DEPLOYMENT_TYPE": "[parameters('OpenAIDeploymentType')]",
+        "OPENAI_EMBEDDINGS_ENGINE_DOC": "[parameters('OpenAIEmbeddingsEngineDoc')]",
+        "OPENAI_EMBEDDINGS_ENGINE_QUERY": "[parameters('OpenAIEmbeddingsEngineQuery')]",
+        "AZURE_CLOUD": "AzureChinaCloud",
+        "VECTOR_STORE_TYPE": "[variables('VectorStoreType')]",
+        "PGVECTOR_DRIVER": "psycopg2",
+        "PGVECTOR_HOST": "[concat(parameters('AzureDatabaseForPostgreSQLName'), '.postgres.database.chinacloudapi.cn')]",
+        "PGVECTOR_PORT": "5432",
+        "PGVECTOR_DATABASE": "postgres",
+        "PGVECTOR_USER": "[parameters('AzureDatabaseForPostgreSQLAdminUsername')]",
+        "PGVECTOR_PASSWORD": "[parameters('AzureDatabaseForPostgreSQLAdminPassword')]",
+        "OPENAI_API_BASE": "[concat('https://', parameters('OpenAIName'),'.openai.azure.com/')]",
+        "OPENAI_API_KEY": "[parameters('OpenAIKey')]",
+        "OPENAI_TEMPERATURE": "[parameters('OpenAITemperature')]",
+        "OPENAI_MAX_TOKENS": "[parameters('OpenAIMaxTokens')]",
+        "BLOB_ACCOUNT_NAME": "[parameters('StorageAccountName')]",
+        "BLOB_ACCOUNT_KEY": "[listkeys(resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName')), '2015-05-01-preview').key1]",
+        "BLOB_CONTAINER_NAME": "[variables('BlobContainerName')]",
+        "FORM_RECOGNIZER_ENDPOINT": "[concat('https://',parameters('DocumentIntelligenceName'),'.cognitiveservices.azure.cn/')]",
+        "FORM_RECOGNIZER_KEY": "[listKeys(concat('Microsoft.CognitiveServices/accounts/', parameters('DocumentIntelligenceName')), '2023-05-01').key1]",
+        "TRANSLATE_ENDPOINT": "https://api.translator.azure.cn/",
+        "TRANSLATE_KEY": "[listKeys(concat('Microsoft.CognitiveServices/accounts/', parameters('TranslatorName')), '2023-05-01').key1]",
+        "TRANSLATE_REGION": "[resourceGroup().location]",
+        "CONVERT_ADD_EMBEDDINGS_URL": "[concat('https://', parameters('FunctionName') , '.chinacloudsites.cn/api/BatchStartProcessing?code=', variables('ClientKey'))]"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deploymentScripts",
+      "apiVersion": "2020-10-01",
+      "kind": "AzurePowerShell",
+      "name": "WaitFunctionDeploymentSection",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('FunctionName'))]"
+      ],
+      "properties": {
+        "azPowerShellVersion": "3.0",
+        "scriptContent": "start-sleep -Seconds 100",
+        "cleanupPreference": "Always",
+        "retentionInterval": "PT1H"
+      }
+    }
+  ]
+}
