@@ -59,7 +59,6 @@ def get_semantic_answer(question):
     if len(res) == 0:
         return None, "No vectors matched, try a different question."
 
-
     res_text = "\n".join(res['text'][0:number_of_embeddings_for_qna])
     prompt = question_prompt.replace("_QUESTION_", question)
     prompt = f"{res_text}\n\n{prompt}"
