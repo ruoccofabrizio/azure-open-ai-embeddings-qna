@@ -50,7 +50,9 @@ class LLMHelper:
         pdf_parser: AzureFormRecognizerClient = None,
         blob_client: AzureBlobStorageClient = None,
         enable_translation: bool = False,
-        translator: AzureTranslatorClient = None):
+        translator: AzureTranslatorClient = None,
+        index_name: str = "embeddings",
+        ):
 
         load_dotenv()
         openai.api_type = "azure"
@@ -61,7 +63,7 @@ class LLMHelper:
         # Azure OpenAI settings
         self.api_base = openai.api_base
         self.api_version = openai.api_version
-        self.index_name: str = "embeddings"
+        self.index_name: str = index_name
         self.model: str = os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', "text-embedding-ada-002")
         self.deployment_name: str = os.getenv("OPENAI_ENGINE", os.getenv("OPENAI_ENGINES", "text-davinci-003"))
         self.deployment_type: str = os.getenv("OPENAI_DEPLOYMENT_TYPE", "Text")
@@ -181,14 +183,8 @@ class LLMHelper:
                 hash_key = f"doc:{self.index_name}:{hash_key}"
                 keys.append(hash_key)
                 doc.metadata = {"source": f"[{source_url}]({source_url}_SAS_TOKEN_PLACEHOLDER_)", "upload_source": f"[{upload_filename} p.{page}]({upload_source_url}_SAS_TOKEN_PLACEHOLDER_#page={page})", "page": page, "chunk": i, "key": hash_key, "filename": filename}
-                print("---------------------------- doc_meta_data --------------------------")
-                print(doc.metadata)
             if docs and keys:
                 if self.vector_store_type == 'AzureSearch':
-                    print("---------------------------- docs --------------------------")
-                    print(docs)
-                    print("---------------------------- keys --------------------------")
-                    print(keys)
                     self.vector_store.add_documents(documents=docs, keys=keys)
                 else:
                     self.vector_store.add_documents(documents=docs, redis_url=self.vector_store_full_address,  index_name=self.index_name, keys=keys)
@@ -228,16 +224,10 @@ class LLMHelper:
                 hash_key = hashlib.sha1(f"{source_url}-page-{i + 1}".encode()).hexdigest()
                 hash_key = f"doc:{self.index_name}:{hash_key}"
                 keys.append(hash_key)
-                doc.metadata = {"source": f"[{search_title}]({source_url}_SAS_TOKEN_PLACEHOLDER_)", "upload_source": f"[{search_title}]({upload_source_url}_SAS_TOKEN_PLACEHOLDER_#page={page})", "page": page, "chunk": i, "key": hash_key, "filename": filename, "search_title": search_title}
-                # doc.metadataを改行して表示する
-                print("---------------------------- doc_meta_data --------------------------")
-                print(doc.metadata)
+                # doc.metadata = {"source": f"[{search_title}]({source_url}_SAS_TOKEN_PLACEHOLDER_)", "upload_source": f"[{search_title}]({upload_source_url}_SAS_TOKEN_PLACEHOLDER_#page={page})", "page": page, "chunk": i, "key": hash_key, "filename": filename, "search_title": search_title}
+                doc.metadata = {"source": f"[{search_title}]({source_url}_SAS_TOKEN_PLACEHOLDER_)", "upload_source": f"{upload_source_url}_SAS_TOKEN_PLACEHOLDER_", "page": page, "chunk": i, "key": hash_key, "filename": filename, "search_title": search_title}
             if docs and keys:
                 if self.vector_store_type == 'AzureSearch':
-                    # print("---------------------------- docs --------------------------")
-                    # print(docs)
-                    # print("---------------------------- keys --------------------------")
-                    # print(keys)
                     self.vector_store.add_documents(documents=docs, keys=keys)
                 else:
                     self.vector_store.add_documents(documents=docs, redis_url=self.vector_store_full_address,  index_name=self.index_name, keys=keys)
@@ -250,9 +240,6 @@ class LLMHelper:
     def convert_file_and_add_embeddings(self, source_url, filename, enable_translation=False):
         # Extract the text from the file
         text = self.pdf_parser.analyze_read(source_url)
-
-        # print("------------------- text 1 ---------------------")
-        # print(text)
 
         # Translate if requested
         converted_text = list(map(lambda x: self.translator.translate(x), text)) if self.enable_translation else text
@@ -277,8 +264,6 @@ class LLMHelper:
     
     # pdfからテキストファイルを1ページごとに生成できるように変更
     def convert_file_and_add_embeddings_demo(self, source_url, source_url_witout_sas, filename, enable_translation=False):
-        print("------------------------------- first source ---------------------------")
-        print(source_url)
         upload_file_source_url = source_url_witout_sas
         # Extract the text from the file
         # blobにアップロードされたドキュメント本体のurlが返ってきている
@@ -311,25 +296,15 @@ class LLMHelper:
         return converted_filenames
     
     def convert_file_and_add_embeddings_bookmarks(self, local_source_path, source_url, source_url_witout_sas, filename, enable_translation=False):
-        print("------------------------------- first source ---------------------------")
-        print(source_url)
         upload_file_source_url = source_url_witout_sas
 
         # source_urlをもとに、ブックマークを取得する
         # ex) bookmarks = [{'title': '前書き', 'page_num': 2, 'end_page': }, {'title': '第1章　はじめに', 'page_num': 3, 'end_page': 5}]
         bookmarks = split_pdf_by_bookmarks(local_source_path)
-        print("------------------------------- bookmarks ---------------------------")
-        print(bookmarks)
-
-
 
         # Extract the text from the file
         # blobにアップロードされたドキュメント本体のurlが返ってきている
         texts = self.pdf_parser.analyze_read(source_url)
-
-        # texts には、ページ単位の文章が入っている
-        print("------------------------------- texts ---------------------------")
-        print(texts)
         converted_filenames = []
         page = 0
         upload_filename = filename
@@ -355,36 +330,14 @@ class LLMHelper:
 
             # Upload the text to Azure Blob Storage
             converted_filename = f"converted/{filename}.txt"
-            source_url = self.blob_client.upload_file(converted_text, f"converted/{filename}_{page}.txt", content_type='text/plain; charset=utf-8')
+            source_url = self.blob_client.upload_file(converted_text, f"converted/{filename}_{bookmark['title']}.txt", content_type='text/plain; charset=utf-8')
 
             print(f"Converted file uploaded to {source_url} with filename {filename}")
             # Update the metadata to indicate that the file has been converted
             #     self.blob_client.upsert_blob_metadata(filename, {"converted": "true"})
             converted_filenames.append(base64.b64encode(converted_filename.encode('utf-8')).decode('utf-8'))
 
-            self.add_embeddings_lc_bookmarks(source_url=source_url, page=start_page, upload_source_url=upload_file_source_url, upload_filename=upload_filename, search_title=bookmark['title'])
-
-
-        # for text in texts:
-        #     page += 1
-        #     text = [text]
-        #     # Translate if requested
-        #     converted_text = list(map(lambda x: self.translator.translate(x), text)) if self.enable_translation else text
-
-        #     # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
-        #     pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')  # do not remove \x0a (\n) nor \x0d (\r)
-        #     converted_text = re.sub(pattern, '', "\n".join(converted_text))
-
-        #     # Upload the text to Azure Blob Storage
-        #     converted_filename = f"converted/{filename}.txt"
-        #     source_url = self.blob_client.upload_file(converted_text, f"converted/{filename}_{page}.txt", content_type='text/plain; charset=utf-8')
-
-        #     print(f"Converted file uploaded to {source_url} with filename {filename}")
-        #     # Update the metadata to indicate that the file has been converted
-        #     self.blob_client.upsert_blob_metadata(filename, {"converted": "true"})
-        #     converted_filenames.append(base64.b64encode(converted_filename.encode('utf-8')).decode('utf-8'))
-
-        #     self.add_embeddings_lc_demo(source_url=source_url, page=page, upload_source_url=upload_file_source_url, upload_filename=upload_filename)
+            self.add_embeddings_lc_bookmarks(source_url=source_url, page=start_page+1, upload_source_url=upload_file_source_url, upload_filename=upload_filename, search_title=bookmark['title'])
 
         return converted_filenames
 
@@ -456,10 +409,18 @@ class LLMHelper:
             if source_key not in contextDict:
                 contextDict[source_key] = []
             myPageContent = self.clean_encoding(res.page_content)
+
+            # 早く試したい場合コメントアウトを外す
+            # search_engine_result["page_content"] = myPageContent
+            # contextDict[source_key].append(myPageContent)
+
+            # 改行を入れたい場合コメントアウトを外す
             cleaningPageContent = self.add_line_break(myPageContent)
             search_engine_result["page_content"] = cleaningPageContent
-            search_engine_result["search_title"] = res.metadata['search_title']
             contextDict[source_key].append(cleaningPageContent)
+
+            search_engine_result["search_title"] = res.metadata['search_title']
+            search_engine_result["page"] = res.metadata['page']
             search_engine_results.append(search_engine_result)
         
         result['answer'] = result['answer'].split('SOURCES:')[0].split('Sources:')[0].split('SOURCE:')[0].split('Source:')[0]
@@ -604,14 +565,28 @@ class LLMHelper:
             {"role":"system",
              "content":"You are an AI assistant that helps people find information."
              },
-             {"role":"user",
+
+            # 日本語プロンプト
+            #  {"role":"user",
+            #   "content":f'''
+            #   """で囲まれた文章のような入力があった際に、改行を入れて文章を読みやすくして。
+            #   ※ただし、文章自体の内容は保ったままにして。
+            #   出力は読みやすくした文章のみとして、○○しましたみたいな余計な補足は含まないで。
+            #   """
+            #   {text}
+            #   """
+            #   '''
+            # }
+            
+            # English prompt
+            {"role":"user",
               "content":f'''
-              """で囲まれた文章のような入力があった際に、改行を入れて文章を読みやすくして。
-              ※ただし、文章自体の内容は保ったままにして。
-              出力は読みやすくした文章のみとして、○○しましたみたいな余計な補足は含まないで。
-              """
-              {text}
-              """
+              When you receive input enclosed in triple quotes, like the example provided, please format the text to include line breaks for easier readability. 
+              Ensure that the content of the text remains unchanged. 
+              The output should consist only of the reformatted text, without any additional explanatory notes such as "I have formatted the text as follows".
+                """
+                {text}
+                """
               '''
             }
         ]

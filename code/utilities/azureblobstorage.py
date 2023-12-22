@@ -50,6 +50,7 @@ class AzureBlobStorageClient:
                     "embeddings_added": blob.metadata.get('embeddings_added', 'false') == 'true' if blob.metadata else False,
                     "fullpath": f"https://{self.account_name}.blob.core.windows.net/{self.container_name}/{blob.name}?{sas}",
                     "converted_filename": blob.metadata.get('converted_filename', '') if blob.metadata else '',
+                    "embeddings": blob.metadata.get('embeddings', '') if blob.metadata else '',
                     "converted_path": ""
                     })
             else:
