@@ -29,15 +29,29 @@ class AzureFormRecognizerClient:
                 "prebuilt-layout", formUrl)
         layout = poller.result()
 
-        results = []
+        # results = []
+
+        # PDFの全ページ数に基づいてresultsリストを初期化
+        total_pages = layout.pages
+        # print(" --------------- total_pages --------------- ")
+        # print(total_pages)
+        results = ['' for _ in range(len(total_pages))]
+
         for p in layout.paragraphs:
+
             page_number = p.bounding_regions[0].page_number
             output_file_id = int((page_number - 1 ) / self.pages_per_embeddings)
+
+            print(f"Debug: output_file_id={output_file_id}, len(results)={len(results)}, page_number={page_number}")
+            # print(results)
+
 
             if len(results) < output_file_id + 1:
                 results.append('')
 
             if p.role not in self.section_to_exclude:
+                # Debug: output_file_id=2, len(results)=1, page_number=3
+                # TODO: ここでエラーが出る
                 results[output_file_id] += f"{p.content}\n"
 
         for t in layout.tables:
