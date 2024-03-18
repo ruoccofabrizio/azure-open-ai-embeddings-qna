@@ -395,7 +395,11 @@ class LLMHelper:
             # top_k_docs_for_context= self.k
         )
         result = chain({"question": question, "chat_history": chat_history})
+        print("----------------- result -----------------")
+        print(result)
         sources = "\n".join(set(map(lambda x: x.metadata["source"], result['source_documents'])))
+        print("----------------- sources -----------------")
+        print(sources)
 
         container_sas = self.blob_client.get_container_sas()
 
@@ -429,6 +433,57 @@ class LLMHelper:
         sources = self.filter_sourcesLinks(sources)
 
         return question, result['answer'], contextDict, sources, search_engine_results
+    
+
+    def get_semantic_answer_lang_chain_search_engine_hybrid(self, question, chat_history, k: int = None):
+        # question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
+        # doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=False, prompt=self.prompt)
+        # chain = ConversationalRetrievalChain(
+        #     retriever=self.vector_store.as_retriever(),
+        #     question_generator=question_generator,
+        #     combine_docs_chain=doc_chain,
+        #     return_source_documents=True,
+        #     # top_k_docs_for_context= self.k
+        # )
+        # result = chain({"question": question, "chat_history": chat_history})
+        result = self.vector_store.hybrid_search(query=question, k= k if k else self.k)
+        print("----------------- result -----------------")
+        print(result)
+        sources = "\n".join(set(map(lambda x: x.metadata["source"], result)))
+        container_sas = self.blob_client.get_container_sas()
+
+        contextDict ={}
+        search_engine_results = []
+        for res in result:
+            search_engine_result = {}
+            # source_key = self.filter_sourcesLinks(res.metadata['source'].replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)).replace('\n', '').replace(' ', '')
+            source_key = self.filter_sourcesLinks(res.metadata['upload_source'].replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)).replace('\n', '').replace(' ', '')
+            search_engine_result['source'] = source_key
+            if source_key not in contextDict:
+                contextDict[source_key] = []
+            myPageContent = self.clean_encoding(res.page_content)
+
+            # 早く試したい場合コメントアウトを外す
+            # search_engine_result["page_content"] = myPageContent
+            # contextDict[source_key].append(myPageContent)
+
+            # 改行を入れたい場合コメントアウトを外す
+            cleaningPageContent = self.add_line_break(myPageContent)
+            search_engine_result["page_content"] = cleaningPageContent
+            contextDict[source_key].append(cleaningPageContent)
+
+            search_engine_result["search_title"] = res.metadata['search_title']
+            search_engine_result["page"] = res.metadata['page']
+            search_engine_results.append(search_engine_result)
+        
+        # result['answer'] = result['answer'].split('SOURCES:')[0].split('Sources:')[0].split('SOURCE:')[0].split('Source:')[0]
+        # result['answer'] = self.clean_encoding(result['answer'])
+        print(" ----------------- sources  -----------------")
+        print(sources)
+        sources = sources.replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)
+        sources = self.filter_sourcesLinks(sources)
+
+        return question, "", contextDict, sources, search_engine_results
 
     def get_embeddings_model(self):
         OPENAI_EMBEDDINGS_ENGINE_DOC = os.getenv('OPENAI_EMEBDDINGS_ENGINE', os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002'))  
