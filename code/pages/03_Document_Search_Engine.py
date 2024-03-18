@@ -74,7 +74,7 @@ def main():
             st.session_state['response'], \
             st.session_state['context'], \
             st.session_state['sources'], \
-            st.session_state['search_engine_results'] = llm_helper.get_semantic_answer_lang_chain_search_engine(query, [])
+            st.session_state['search_engine_results'] = llm_helper.get_semantic_answer_lang_chain_search_engine_hybrid(query, [])
             
         if 'search_engine_results' in st.session_state:
             st.write("検索結果：")
