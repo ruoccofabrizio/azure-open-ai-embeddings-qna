@@ -42,7 +42,7 @@ class AzureFormRecognizerClient:
             page_number = p.bounding_regions[0].page_number
             output_file_id = int((page_number - 1 ) / self.pages_per_embeddings)
 
-            print(f"Debug: output_file_id={output_file_id}, len(results)={len(results)}, page_number={page_number}")
+            # print(f"Debug: output_file_id={output_file_id}, len(results)={len(results)}, page_number={page_number}")
             # print(results)
 
 

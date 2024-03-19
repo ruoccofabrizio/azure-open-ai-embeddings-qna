@@ -90,7 +90,7 @@ class LLMHelper:
                 self.vector_store_full_address = f"{self.vector_store_protocol}{self.vector_store_address}:{self.vector_store_port}"
 
         self.chunk_size = int(os.getenv('CHUNK_SIZE', 1024))
-        self.chunk_overlap = int(os.getenv('CHUNK_OVERLAP', 256))
+        self.chunk_overlap = int(os.getenv('CHUNK_OVERLAP', 0))
         self.document_loaders: BaseLoader = WebBaseLoader if document_loaders is None else document_loaders
         self.text_splitter: TextSplitter = TokenTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap) if text_splitter is None else text_splitter
         self.embeddings: OpenAIEmbeddings = OpenAIEmbeddings(model=self.model, chunk_size=1) if embeddings is None else embeddings
@@ -235,6 +235,49 @@ class LLMHelper:
         except Exception as e:
             logging.error(f"Error adding embeddings for {source_url}: {e}")
             raise e
+    
+    # メタデータとして元のファイル名、ページ番号を付与する
+    def add_embeddings_lc_bookmarks_directly(self, text, source_url, page, upload_source_url, search_title):
+        # try:
+        #     documents = self.document_loaders(source_url).load()
+            
+        #     # Convert to UTF-8 encoding for non-ascii text
+        #     for(document) in documents:
+        #         try:
+        #             if document.page_content.encode("iso-8859-1") == document.page_content.encode("latin-1"):
+        #                 document.page_content = document.page_content.encode("iso-8859-1").decode("utf-8", errors="ignore")
+        #         except:
+        #             pass
+            
+        # 一定の長さでファイルを分割する
+        docs = self.text_splitter.split_text(text)
+        print(docs)
+        # Remove half non-ascii character from start/end of doc content (langchain TokenTextSplitter may split a non-ascii character in half)
+        pattern = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f\u0080-\u00a0\u2000-\u3000\ufff0-\uffff]')  # do not remove \x0a (\n) nor \x0d (\r)
+        for(doc) in docs:
+            doc = re.sub(pattern, '', doc)
+            if doc == '':
+                docs.remove(doc)
+        
+        metadatas = []
+        keys = []
+        for i, doc in enumerate(docs):
+            # Create a unique key for the document
+            source_url = source_url.split('?')[0]
+            filename = "/".join(source_url.split('/')[4:])
+            # hash_key = hashlib.sha1(f"{source_url}_{i}".encode('utf-8')).hexdigest()
+            hash_key = hashlib.sha1(f"{source_url}-page-{i + 1}".encode()).hexdigest()
+            hash_key = f"doc:{self.index_name}:{hash_key}"
+            keys.append(hash_key)
+            # doc.metadata = {"source": f"[{search_title}]({source_url}_SAS_TOKEN_PLACEHOLDER_)", "upload_source": f"[{search_title}]({upload_source_url}_SAS_TOKEN_PLACEHOLDER_#page={page})", "page": page, "chunk": i, "key": hash_key, "filename": filename, "search_title": search_title}
+            # doc.metadata = {"source": f"[{search_title}]({source_url}_SAS_TOKEN_PLACEHOLDER_)", "upload_source": f"{upload_source_url}_SAS_TOKEN_PLACEHOLDER_", "page": page, "chunk": i, "key": hash_key, "filename": filename, "search_title": search_title}
+            metadatas.append({"source": f"[{search_title}]({source_url}_SAS_TOKEN_PLACEHOLDER_)", "upload_source": f"{upload_source_url}_SAS_TOKEN_PLACEHOLDER_", "page": page, "chunk": i, "key": hash_key, "filename": filename, "search_title": search_title})
+        if docs and keys:
+            if self.vector_store_type == 'AzureSearch':
+                # self.vector_store.add_documents(documents=docs, keys=keys)
+                self.vector_store.add_texts(texts=docs, metadatas=metadatas, keys=keys)
+            else:
+                self.vector_store.add_documents(documents=docs, redis_url=self.vector_store_full_address,  index_name=self.index_name, keys=keys)
         
     # INFO: textsのところにうまいことpageを載せれば、ページごとにconvertしなくてもいけるのでは？
     def convert_file_and_add_embeddings(self, source_url, filename, enable_translation=False):
@@ -301,6 +344,7 @@ class LLMHelper:
         # source_urlをもとに、ブックマークを取得する
         # ex) bookmarks = [{'title': '前書き', 'page_num': 2, 'end_page': }, {'title': '第1章　はじめに', 'page_num': 3, 'end_page': 5}]
         bookmarks = split_pdf_by_bookmarks(local_source_path)
+        print(bookmarks)
 
         # Extract the text from the file
         # blobにアップロードされたドキュメント本体のurlが返ってきている
@@ -314,12 +358,12 @@ class LLMHelper:
             end_page = bookmark['end_page']
 
             if start_page == end_page:
-                text = texts[start_page-1]
+                text = texts[start_page]
                 text = [text]
             
             else:
                 # textsの中のstart_pageからend_pageまでの文章を取得してマージする
-                text = texts[start_page-1:end_page]
+                text = texts[start_page:end_page]
 
             # Translate if requested
             converted_text = list(map(lambda x: self.translator.translate(x), text)) if self.enable_translation else text
@@ -332,14 +376,15 @@ class LLMHelper:
             converted_filename = f"converted/{filename}.txt"
             source_url = self.blob_client.upload_file(converted_text, f"converted/{filename}_{bookmark['title']}.txt", content_type='text/plain; charset=utf-8')
 
-            print(f"Converted file uploaded to {source_url} with filename {filename}")
+            # print(f"Converted file uploaded to {source_url} with filename {filename}")
             # Update the metadata to indicate that the file has been converted
             #     self.blob_client.upsert_blob_metadata(filename, {"converted": "true"})
             converted_filenames.append(base64.b64encode(converted_filename.encode('utf-8')).decode('utf-8'))
 
             self.add_embeddings_lc_bookmarks(source_url=source_url, page=start_page+1, upload_source_url=upload_file_source_url, upload_filename=upload_filename, search_title=bookmark['title'])
+            # self.add_embeddings_lc_bookmarks_directly(text=converted_text, source_url=source_url, page=start_page+1, upload_source_url=upload_file_source_url, search_title=bookmark['title'])
 
-        return converted_filenames
+        # return converted_filenames
 
     def get_all_documents(self, k: int = None):
         result = self.vector_store.similarity_search(query="*", k= k if k else self.k)
