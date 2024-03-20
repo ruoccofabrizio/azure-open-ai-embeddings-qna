@@ -28,7 +28,7 @@ from utilities.azureblobstorage import AzureBlobStorageClient
 from utilities.translator import AzureTranslatorClient
 from utilities.customprompt import PROMPT
 from utilities.redis import RedisExtended
-from utilities.azuresearch import AzureSearch
+from utilities.azuresearch import AzureSearch, AzureSearchVectorStoreRetriever
 from utilities.splitbookmarks import *
 
 import pandas as pd
@@ -100,6 +100,7 @@ class LLMHelper:
             self.llm: AzureOpenAI = AzureOpenAI(deployment_name=self.deployment_name, temperature=self.temperature, max_tokens=self.max_tokens) if llm is None else llm
         if self.vector_store_type == "AzureSearch":
             self.vector_store: VectorStore = AzureSearch(azure_cognitive_search_name=self.vector_store_address, azure_cognitive_search_key=self.vector_store_password, index_name=self.index_name, embedding_function=self.embeddings.embed_query) if vector_store is None else vector_store
+            self.hybrid_store = AzureSearchVectorStoreRetriever(vectorstore=self.vector_store, search_type="semantic_hybrid")
         else:
             self.vector_store: RedisExtended = RedisExtended(redis_url=self.vector_store_full_address, index_name=self.index_name, embedding_function=self.embeddings.embed_query) if vector_store is None else vector_store   
         self.k : int = 3 if k is None else k
@@ -433,7 +434,7 @@ class LLMHelper:
         question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
         doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=False, prompt=self.prompt)
         chain = ConversationalRetrievalChain(
-            retriever=self.vector_store.as_retriever(),
+            retriever=self.hybrid_store,
             question_generator=question_generator,
             combine_docs_chain=doc_chain,
             return_source_documents=True,
